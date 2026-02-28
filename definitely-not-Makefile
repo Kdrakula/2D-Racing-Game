@@ -1,0 +1,21 @@
+# Compiler settings
+CXX = clang++
+CXXFLAGS = -std=c++17 -Wall -Iinclude -I/opt/homebrew/include
+
+# Linker settings (SDL3 libraries)
+LDFLAGS = -L/opt/homebrew/lib -lSDL3 -lSDL3_image
+
+# Source files and target executable name
+SRCS = src/*.cpp
+TARGET = MyRacingGame
+
+# Default target when you just type 'make'
+all: $(TARGET)
+
+# Rule to build the game
+$(TARGET):
+	$(CXX) $(CXXFLAGS) $(SRCS) $(LDFLAGS) -o $(TARGET)
+
+# Rule to clean up the compiled executable
+clean:
+	rm -f $(TARGET)
