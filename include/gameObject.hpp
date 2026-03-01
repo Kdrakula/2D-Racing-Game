@@ -1,8 +1,8 @@
 #ifndef GAMEOBJECT_HPP
 #define GAMEOBJECT_HPP
 
+#include <math.h>
 #include <SDL3/SDL.h>
-#include <cmath> // Required for M_PI and trigonometry
 
 class GameObject {
 public:
@@ -15,7 +15,7 @@ public:
     float vel = 0.0f;
     float dir = 0.0f;
     float posx, posy;
-    double angle = M_PI; // Start facing the correct direction
+    double angle = M_PI;
     
 private:
     double deg = 0.0;
