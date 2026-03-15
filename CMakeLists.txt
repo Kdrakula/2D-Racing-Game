@@ -7,6 +7,8 @@ project(MyRacingGame VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
+
 # Find SDL3 and SDL3_image packages provided by Homebrew or system package managers
 find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
