@@ -1,0 +1,28 @@
+# Kontrola wersji
+.git
+
+# Środowisko wirtualne macOS/Pythona
+.venv
+__pycache__
+*.pyc
+
+# Pliki budowania C++
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Zasoby i dane gry nie są potrzebne serwerowi do budowy obrazu
+assets/
+lap_times.json
+src/
+include/
+
+# IDE
+.idea/
+.vscode/
+.vscode-server/
+.cache/
+compile_commands.json
+.DS_Store

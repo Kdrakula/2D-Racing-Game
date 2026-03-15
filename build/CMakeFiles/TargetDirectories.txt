@@ -1,0 +1,13 @@
+/Users/kuba/2D-Racing-Game/build/CMakeFiles/MyRacingGame.dir
+/Users/kuba/2D-Racing-Game/build/CMakeFiles/edit_cache.dir
+/Users/kuba/2D-Racing-Game/build/CMakeFiles/rebuild_cache.dir
+/Users/kuba/2D-Racing-Game/build/CMakeFiles/list_install_components.dir
+/Users/kuba/2D-Racing-Game/build/CMakeFiles/install.dir
+/Users/kuba/2D-Racing-Game/build/CMakeFiles/install/local.dir
+/Users/kuba/2D-Racing-Game/build/CMakeFiles/install/strip.dir
+/Users/kuba/2D-Racing-Game/build/_deps/httplib-build/CMakeFiles/edit_cache.dir
+/Users/kuba/2D-Racing-Game/build/_deps/httplib-build/CMakeFiles/rebuild_cache.dir
+/Users/kuba/2D-Racing-Game/build/_deps/httplib-build/CMakeFiles/list_install_components.dir
+/Users/kuba/2D-Racing-Game/build/_deps/httplib-build/CMakeFiles/install.dir
+/Users/kuba/2D-Racing-Game/build/_deps/httplib-build/CMakeFiles/install/local.dir
+/Users/kuba/2D-Racing-Game/build/_deps/httplib-build/CMakeFiles/install/strip.dir

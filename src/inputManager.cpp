@@ -5,35 +5,88 @@ InputManager::InputManager() {}
 InputManager::~InputManager() {}
 
 void InputManager::update() {
-    // Reset one-frame flags
-    isDebugToggled = false;
+  // Reset one-frame flags
+  isDebugToggled = false;
 
-    SDL_Event event;
-    while (SDL_PollEvent(&event)) {
-        if (event.type == SDL_EVENT_QUIT) {
-            isQuitRequested = true;
+  SDL_Event event;
+  while (SDL_PollEvent(&event)) {
+    if (event.type == SDL_EVENT_QUIT) {
+      isQuitRequested = true;
+    } else if (event.type == SDL_EVENT_KEY_DOWN) {
+      switch (event.key.key) {
+      case SDLK_ESCAPE:
+        isQuitRequested = true;
+        break;
+      case SDLK_L:
+        isDebugToggled = true;
+        break;
+      case SDLK_TAB:
+        showResults = true;
+        break;
+      case SDLK_N:
+        // Toggle typing
+        if (!isTypingName) {
+          isTypingName = true;
+          SDL_StartTextInput(SDL_GetKeyboardFocus());
+        } else {
+          isTypingName = false;
+          SDL_StopTextInput(SDL_GetKeyboardFocus());
         }
-        else if (event.type == SDL_EVENT_KEY_DOWN) {
-            switch (event.key.key) {
-                case SDLK_ESCAPE: isQuitRequested = true; break;
-                case SDLK_TAB: isDebugToggled = true; break;
-                case SDLK_SPACE: braking = true; break;
-                case SDLK_A: steeringDir = -1.0f; break;
-                case SDLK_D: steeringDir = 1.0f; break;
-                case SDLK_W: up = true; break;
-                case SDLK_S: down = true; break;
-                default: break;
-            }
+        break;
+      case SDLK_BACKSPACE:
+        if (isTypingName && !playerName.empty()) {
+          playerName.pop_back();
         }
-        else if (event.type == SDL_EVENT_KEY_UP) {
-            switch (event.key.key) {
-                case SDLK_SPACE: braking = false; break;
-                case SDLK_A: 
-                case SDLK_D: steeringDir = 0.0f; break;
-                case SDLK_W: up = false; break;
-                case SDLK_S: down = false; break;
-                default: break;
-            }
+        break;
+      case SDLK_RETURN:
+        if (isTypingName) {
+          isTypingName = false;
+          SDL_StopTextInput(SDL_GetKeyboardFocus());
         }
+        break;
+      case SDLK_SPACE:
+        braking = true;
+        break;
+      case SDLK_A:
+        steeringDir = -1.0f;
+        break;
+      case SDLK_D:
+        steeringDir = 1.0f;
+        break;
+      case SDLK_W:
+        up = true;
+        break;
+      case SDLK_S:
+        down = true;
+        break;
+      default:
+        break;
+      }
+    } else if (event.type == SDL_EVENT_KEY_UP) {
+      switch (event.key.key) {
+      case SDLK_TAB:
+        showResults = false;
+        break;
+      case SDLK_SPACE:
+        braking = false;
+        break;
+      case SDLK_A:
+      case SDLK_D:
+        steeringDir = 0.0f;
+        break;
+      case SDLK_W:
+        up = false;
+        break;
+      case SDLK_S:
+        down = false;
+        break;
+      default:
+        break;
+      }
+    } else if (event.type == SDL_EVENT_TEXT_INPUT) {
+      if (isTypingName && playerName.length() < 15) {
+        playerName += event.text.text;
+      }
     }
+  }
 }
