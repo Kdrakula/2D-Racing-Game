@@ -2,9 +2,9 @@ name: C++ Client Build
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main"]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main"]
 
 jobs:
   build-macos:
@@ -15,7 +15,7 @@ jobs:
 
     - name: Install dependencies (brew)
       run: |
-        brew install cmake sdl2 sdl2_image sdl2_ttf nlohmann-json
+        brew install cmake sdl3 sdl3_image sdl3_ttf nlohmann-json
 
     - name: Configure CMake
       run: cmake -S . -B build
