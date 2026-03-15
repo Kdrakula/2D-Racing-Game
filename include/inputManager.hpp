@@ -23,6 +23,7 @@ public:
   bool up = false;
   bool down = false;
   bool braking = false;
+  bool updateKey = false;
   float steeringDir = 0.0f;
 };
 

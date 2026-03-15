@@ -6,6 +6,7 @@
 #include "lapTimer.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
+#include <SDL3_ttf/SDL_ttf.h>
 
 class GameObject;
 
@@ -23,6 +24,7 @@ public:
 
   static SDL_FRect camera;
   static SDL_Renderer *renderer;
+  static TTF_Font *font;
 
 private:
   bool isRunning = false;
@@ -35,6 +37,11 @@ private:
   InputManager input;
   CollisionManager collision;
   LapTimer lapTimer;
+
+  // --- Auto-Updater ---
+  bool updateAvailable = false;
+  std::string updateDownloadUrl;
+  void checkForUpdates();
 };
 
 #endif

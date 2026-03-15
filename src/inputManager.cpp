@@ -47,6 +47,9 @@ void InputManager::update() {
       case SDLK_SPACE:
         braking = true;
         break;
+      case SDLK_U:
+        updateKey = true;
+        break;
       case SDLK_A:
         steeringDir = -1.0f;
         break;
@@ -69,6 +72,9 @@ void InputManager::update() {
         break;
       case SDLK_SPACE:
         braking = false;
+        break;
+      case SDLK_U:
+        updateKey = false;
         break;
       case SDLK_A:
       case SDLK_D:
