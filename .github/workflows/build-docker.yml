@@ -3,20 +3,8 @@ name: Docker Build (Server & API)
 on:
   push:
     branches: [ "main", "master" ]
-    paths:
-      - 'server.py'
-      - 'Dockerfile'
-      - 'leaderboard_api/**'
-      - 'requirements.txt'
-      - 'docker-compose.yml'
   pull_request:
     branches: [ "main", "master" ]
-    paths:
-      - 'server.py'
-      - 'Dockerfile'
-      - 'leaderboard_api/**'
-      - 'requirements.txt'
-      - 'docker-compose.yml'
 
 jobs:
   build-leaderboard-api:

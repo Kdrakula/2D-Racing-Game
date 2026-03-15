@@ -1,0 +1,30 @@
+# MacOS
+.DS_Store
+
+# Virtual Environment
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# CMake Build Directory
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# C++ Object and Debug files
+*.o
+*.out
+*.exe
+*.dylib
+*.so
+*.dll
+*.dSYM/
+compile_commands.json
+
+# Tooling
+.vscode/
+.idea/
+.cache/

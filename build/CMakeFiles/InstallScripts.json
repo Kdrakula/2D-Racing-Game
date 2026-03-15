@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/Users/kuba/2D-Racing-Game/build/cmake_install.cmake",
-		"/Users/kuba/2D-Racing-Game/build/_deps/httplib-build/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
