@@ -2,6 +2,7 @@
 #define GAMECONSTANTS_HPP
 
 #include <string>
+#include <vector>
 
 constexpr float MAP_WIDTH = 7680.0f;
 constexpr float MAP_HEIGHT = 4320.0f;
@@ -14,13 +15,14 @@ constexpr float BRAKE_FORCE = 2.0f;
 constexpr float ACCELERATION = 0.05f;
 constexpr float DEACCELERATION = 0.02f;
 
-
 struct TrackInfo {
   std::string name;
   std::string bgAsset;   // e.g. "assets/racetrack.png"
   std::string maskAsset; // e.g. "assets/mask.png"
   float startX;
   float startY;
+  std::vector<SDL_FRect> checkpoints;
+  SDL_FRect finishLine;
 };
 
 #endif
