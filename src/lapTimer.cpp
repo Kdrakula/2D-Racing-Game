@@ -1,4 +1,6 @@
 #include "lapTimer.hpp"
+#include "engine.hpp" // For Game::font
+#include <SDL3_ttf/SDL_ttf.h>
 #include <httplib.h>
 #include <iostream>
 #include <sstream>
@@ -25,7 +27,7 @@ bool LapTimer::checkAABB(const SDL_FRect &a, const SDL_FRect &b) const {
 void LapTimer::fetchLeaderboard() {
   std::thread([this]() {
     httplib::Client cli(
-        "http://localhost:4000"); // Updated port based on server.py
+        "http://127.0.0.1:4000"); // Use IPv4 loopback directly to avoid IPv6 resolution issues
 
     if (auto res = cli.Get("/api/laptimes")) {
       if (res->status == 200) {
@@ -133,7 +135,7 @@ void LapTimer::update(const SDL_FRect &playerBox, float windowWidth,
 
       // Send to backend on a background thread
       std::thread([this, timeInSeconds, playerName]() {
-        httplib::Client cli("http://localhost:4000"); // Updated port
+        httplib::Client cli("http://127.0.0.1:4000"); // Updated port and proxy info
 
         std::string payload = "{\"player\": \"" + playerName +
                               "\", \"time\": " + std::to_string(timeInSeconds) +
@@ -173,28 +175,60 @@ void LapTimer::renderResults(SDL_Renderer *renderer, float windowWidth,
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   SDL_RenderRect(renderer, &bgRect);
 
-  // Title
-  SDL_RenderDebugText(renderer, bgRect.x + 120, bgRect.y + 20,
-                      "--- TOP LAP TIMES ---");
+  SDL_Color textColor = {255, 255, 255, 255};
+
+  // Title render using TTF
+  if (Game::font) {
+      SDL_Surface* titleSurface = TTF_RenderText_Blended(Game::font, "--- TOP LAP TIMES ---", 0, textColor);
+      if (titleSurface) {
+          SDL_Texture* titleTexture = SDL_CreateTextureFromSurface(renderer, titleSurface);
+          if (titleTexture) {
+              SDL_FRect titleRect = {bgRect.x + (boxWidth - titleSurface->w) / 2.0f, bgRect.y + 20.0f, (float)titleSurface->w, (float)titleSurface->h};
+              SDL_RenderTexture(renderer, titleTexture, nullptr, &titleRect);
+              SDL_DestroyTexture(titleTexture);
+          }
+          SDL_DestroySurface(titleSurface);
+      }
+  }
 
   // Lock and draw records
   std::lock_guard<std::mutex> lock(recordsMutex);
 
   if (topRecords.empty()) {
-    SDL_RenderDebugText(renderer, bgRect.x + 120, bgRect.y + 60,
-                        "No records found.");
+      if (Game::font) {
+          SDL_Surface* txtSurface = TTF_RenderText_Blended(Game::font, "No records found.", 0, textColor);
+          if (txtSurface) {
+              SDL_Texture* txtTex = SDL_CreateTextureFromSurface(renderer, txtSurface);
+              if (txtTex) {
+                  SDL_FRect textRect = {bgRect.x + 120.0f, bgRect.y + 80.0f, (float)txtSurface->w, (float)txtSurface->h};
+                  SDL_RenderTexture(renderer, txtTex, nullptr, &textRect);
+                  SDL_DestroyTexture(txtTex);
+              }
+              SDL_DestroySurface(txtSurface);
+          }
+      }
   } else {
-    float startY = bgRect.y + 60;
+    float startY = bgRect.y + 80;
     for (size_t i = 0; i < topRecords.size(); i++) {
       std::stringstream ss;
       ss << (i + 1) << ". " << topRecords[i].player << " - "
          << topRecords[i].time << "s";
       if (!topRecords[i].date.empty())
-        ss << " (" << topRecords[i].date << ")";
+         ss << " (" << topRecords[i].date << ")";
 
-      // Render text
-      SDL_RenderDebugText(renderer, bgRect.x + 40, startY + (i * 30),
-                          ss.str().c_str());
+      // Render text using TTF
+      if (Game::font) {
+          SDL_Surface* rowSurface = TTF_RenderText_Blended(Game::font, ss.str().c_str(), 0, textColor);
+          if (rowSurface) {
+              SDL_Texture* rowTexture = SDL_CreateTextureFromSurface(renderer, rowSurface);
+              if (rowTexture) {
+                  SDL_FRect rowRect = {bgRect.x + 40.0f, startY + (i * 35.0f), (float)rowSurface->w, (float)rowSurface->h};
+                  SDL_RenderTexture(renderer, rowTexture, nullptr, &rowRect);
+                  SDL_DestroyTexture(rowTexture);
+              }
+              SDL_DestroySurface(rowSurface);
+          }
+      }
     }
   }
 
@@ -233,9 +267,21 @@ void LapTimer::renderTime(SDL_Renderer *renderer, float windowWidth) {
   // Slightly transparent black background for text
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 150);
-  SDL_FRect bgRect = {(windowWidth - 200.0f) / 2.0f, 10.0f, 200.0f, 40.0f};
+  SDL_FRect bgRect = {(windowWidth - 250.0f) / 2.0f, 10.0f, 250.0f, 50.0f};
   SDL_RenderFillRect(renderer, &bgRect);
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 
-  SDL_RenderDebugText(renderer, bgRect.x + 20, bgRect.y + 10, ss.str().c_str());
+  if (Game::font) {
+      SDL_Color textColor = {255, 255, 255, 255};
+      SDL_Surface* timeSurface = TTF_RenderText_Blended(Game::font, ss.str().c_str(), 0, textColor);
+      if (timeSurface) {
+          SDL_Texture* timeTexture = SDL_CreateTextureFromSurface(renderer, timeSurface);
+          if (timeTexture) {
+              SDL_FRect timeRect = {bgRect.x + (bgRect.w - timeSurface->w) / 2.0f, bgRect.y + (bgRect.h - timeSurface->h) / 2.0f, (float)timeSurface->w, (float)timeSurface->h};
+              SDL_RenderTexture(renderer, timeTexture, nullptr, &timeRect);
+              SDL_DestroyTexture(timeTexture);
+          }
+          SDL_DestroySurface(timeSurface);
+      }
+  }
 }

@@ -5,9 +5,9 @@
 #include "textureManager.hpp"
 #include <httplib.h>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
-#include <nlohmann/json.hpp>
 
 #define GAME_VERSION "v1.0"
 
@@ -16,48 +16,49 @@ SDL_FRect Game::camera = {0.0f, 0.0f, WINDOW_WIDTH, WINDOW_HEIGHT};
 TTF_Font *Game::font = nullptr;
 
 void Game::checkForUpdates() {
-    std::thread([this]() {
-        httplib::Client cli("https://api.github.com");
-        cli.set_follow_location(true);
+  std::thread([this]() {
+    httplib::Client cli("https://api.github.com");
+    cli.set_follow_location(true);
 
-        // GitHub API requires a User-Agent header
-        httplib::Headers headers = {
-            {"User-Agent", "MyRacingGame-AutoUpdater"}
-        };
+    // GitHub API requires a User-Agent header
+    httplib::Headers headers = {{"User-Agent", "MyRacingGame-AutoUpdater"}};
 
-        if (auto res = cli.Get("/repos/Kdrakula/2D-Racing-Game/releases/latest", headers)) {
-            if (res->status == 200) {
-                try {
-                    auto json = nlohmann::json::parse(res->body);
-                    std::string latestVersion = json["tag_name"];
+    if (auto res = cli.Get("/repos/Kdrakula/2D-Racing-Game/releases/latest",
+                           headers)) {
+      if (res->status == 200) {
+        try {
+          auto json = nlohmann::json::parse(res->body);
+          std::string latestVersion = json["tag_name"];
 
-                    if (latestVersion != GAME_VERSION) {
-                        std::cout << "[UPDATER] New version found: " << latestVersion << " (Current: " << GAME_VERSION << ")" << std::endl;
-                        
-                        // Find the macOS zip asset
-                        if (json.contains("assets") && json["assets"].is_array()) {
-                            for (const auto& asset : json["assets"]) {
-                                std::string assetName = asset["name"];
-                                if (assetName == "MyRacingGame-macOS.zip") {
-                                    this->updateDownloadUrl = asset["browser_download_url"];
-                                    this->updateAvailable = true;
-                                    break;
-                                }
-                            }
-                        }
-                    } else {
-                        std::cout << "[UPDATER] Game is up to date." << std::endl;
-                    }
-                } catch (const std::exception& e) {
-                    std::cout << "[UPDATER] JSON Parse Error: " << e.what() << std::endl;
+          if (latestVersion != GAME_VERSION) {
+            std::cout << "[UPDATER] New version found: " << latestVersion
+                      << " (Current: " << GAME_VERSION << ")" << std::endl;
+
+            // Find the macOS zip asset
+            if (json.contains("assets") && json["assets"].is_array()) {
+              for (const auto &asset : json["assets"]) {
+                std::string assetName = asset["name"];
+                if (assetName == "MyRacingGame-macOS.zip") {
+                  this->updateDownloadUrl = asset["browser_download_url"];
+                  this->updateAvailable = true;
+                  break;
                 }
-            } else {
-                std::cout << "[UPDATER] HTTP Error: " << res->status << std::endl;
+              }
             }
-        } else {
-            std::cout << "[UPDATER] Connection Failed: " << to_string(res.error()) << std::endl;
+          } else {
+            std::cout << "[UPDATER] Game is up to date." << std::endl;
+          }
+        } catch (const std::exception &e) {
+          std::cout << "[UPDATER] JSON Parse Error: " << e.what() << std::endl;
         }
-    }).detach();
+      } else {
+        std::cout << "[UPDATER] HTTP Error: " << res->status << std::endl;
+      }
+    } else {
+      std::cout << "[UPDATER] Connection Failed: " << to_string(res.error())
+                << std::endl;
+    }
+  }).detach();
 }
 
 Game::Game(const char *title, int width, int height) {
@@ -81,9 +82,21 @@ Game::Game(const char *title, int width, int height) {
   if (renderer == nullptr)
     logSDLError(std::cout, "Create renderer");
 
-  font = TTF_OpenFont("assets/Roboto-Regular.ttf", 24);
+  const char *fontBasePath = SDL_GetBasePath();
+  std::string fontPathStr =
+      std::string(fontBasePath) + "assets/Roboto-Regular.ttf";
+
+  // Quick fix for macOS if basePath points inside .app/Contents/MacOS/
+  size_t fontPos = fontPathStr.rfind(".app/Contents/MacOS/");
+  if (fontPos != std::string::npos) {
+    fontPathStr = fontPathStr.substr(0, fontPos) +
+                  ".app/Contents/Resources/assets/Roboto-Regular.ttf";
+  }
+
+  font = TTF_OpenFont(fontPathStr.c_str(), 24);
   if (font == nullptr) {
-      std::cout << "Failed to load font: " << SDL_GetError() << std::endl;
+    std::cout << "Failed to load font from " << fontPathStr << ": "
+              << SDL_GetError() << std::endl;
   }
 
   // Load visual background into VRAM (GPU)
@@ -203,36 +216,39 @@ void Game::update() {
 
   // --- AUTO UPDATER EXECUTION ---
   if (updateAvailable && input.updateKey) {
-      std::cout << "[UPDATER] Starting update sequence..." << std::endl;
-      
-      // Determine paths securely inside main loop
-      const char* basePath = SDL_GetBasePath();
-      std::string currentAppPath = std::string(basePath);
+    std::cout << "[UPDATER] Starting update sequence..." << std::endl;
 
-      // Remove /Contents/Resources/ assuming standard macOS structure
-      size_t pos = currentAppPath.rfind(".app/");
-      if (pos != std::string::npos) {
-          currentAppPath = currentAppPath.substr(0, pos + 4);
-      }
+    // Determine paths securely inside main loop
+    const char *basePath = SDL_GetBasePath();
+    std::string currentAppPath = std::string(basePath);
 
-      std::string scriptPath = currentAppPath + "/Contents/Resources/assets/updater.sh";
-      
-      // Execute the bash script in the background using ampersand 
-      std::string cmd = "\"" + scriptPath + "\" " + updateDownloadUrl + " \"" + currentAppPath + "\" &";
-      std::cout << "[UPDATER] Running: " << cmd << std::endl;
-      system(cmd.c_str());
+    // Remove /Contents/Resources/ assuming standard macOS structure
+    size_t pos = currentAppPath.rfind(".app/");
+    if (pos != std::string::npos) {
+      currentAppPath = currentAppPath.substr(0, pos + 4);
+    }
 
-      // Let the main thread exit natively so macOS releases the app handle gracefully
-      isRunning = false; 
+    std::string scriptPath =
+        currentAppPath + "/Contents/Resources/assets/updater.sh";
+
+    // Execute the bash script in the background using ampersand
+    std::string cmd = "\"" + scriptPath + "\" " + updateDownloadUrl + " \"" +
+                      currentAppPath + "\" &";
+    std::cout << "[UPDATER] Running: " << cmd << std::endl;
+    system(cmd.c_str());
+
+    // Let the main thread exit natively so macOS releases the app handle
+    // gracefully
+    isRunning = false;
   }
 
   // --- 8. DEBUG: Live Telemetry ---
   if (isDebugMode) {
-    std::cout << "\r[DEBUG] X: " << static_cast<int>(player->posx)
+    std::cout << "\r[DEBUGGGGGGG] X: " << static_cast<int>(player->posx)
               << " | Y: " << static_cast<int>(player->posy)
               << " | Vel: " << player->vel
               << " | Deg: " << static_cast<int>(player->angle * (180.0 / M_PI))
-              << "          " << std::flush;
+              << " | XD" << GAME_VERSION << "          " << std::flush;
   }
 }
 
@@ -273,6 +289,38 @@ void Game::render() {
 
     // Disable alpha blending to return to normal rendering
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+
+    // Draw Version text in bottom left corner
+    // Draw Version text in bottom left corner using TTF
+    if (font) {
+      SDL_Color versionColor = {255, 255, 0, 255}; // Yellow text
+      std::string verText = "Developer Mode - Version: ";
+      verText += GAME_VERSION;
+
+      SDL_Surface *verSurface =
+          TTF_RenderText_Blended(font, verText.c_str(), 0, versionColor);
+
+      if (verSurface) {
+        SDL_Texture *verTex =
+            SDL_CreateTextureFromSurface(renderer, verSurface);
+        SDL_DestroySurface(
+            verSurface); // Free surface immediately after texture creation
+        if (verTex) {
+          // Use SDL_GetTextureSize for logical (not physical Retina) dimensions
+          float tw = 0, th = 0;
+          SDL_GetTextureSize(verTex, &tw, &th);
+          SDL_FRect verRect = {10.0f, 10.0f, tw, th};
+          SDL_RenderTexture(renderer, verTex, nullptr, &verRect);
+          SDL_DestroyTexture(verTex);
+        } else {
+          std::cout << "[DEBUG] Failed to create texture: " << SDL_GetError()
+                    << std::endl;
+        }
+      } else {
+        std::cout << "[DEBUG] Failed to create surface: " << SDL_GetError()
+                  << std::endl;
+      }
+    }
   }
 
   // --- LEADERBOARD OVERLAY ---
@@ -282,17 +330,20 @@ void Game::render() {
 
   // --- AUTO UPDATER OVERLAY ---
   if (updateAvailable && font) {
-      SDL_Color textColor = {255, 50, 50, 255}; // Red Text
-      SDL_Surface* txtSurface = TTF_RenderText_Blended(font, "New Update Available! Press U to Restart and Download.", 0, textColor);
-      if (txtSurface) {
-          SDL_Texture* txtTex = SDL_CreateTextureFromSurface(renderer, txtSurface);
-          if (txtTex) {
-              SDL_FRect textRect = { (WINDOW_WIDTH - txtSurface->w) / 2.0f, 60.0f, (float)txtSurface->w, (float)txtSurface->h };
-              SDL_RenderTexture(renderer, txtTex, nullptr, &textRect);
-              SDL_DestroyTexture(txtTex);
-          }
-          SDL_DestroySurface(txtSurface);
+    SDL_Color textColor = {255, 50, 50, 255}; // Red Text
+    SDL_Surface *txtSurface = TTF_RenderText_Blended(
+        font, "New Update Available! Press U to Restart and Download.", 0,
+        textColor);
+    if (txtSurface) {
+      SDL_Texture *txtTex = SDL_CreateTextureFromSurface(renderer, txtSurface);
+      if (txtTex) {
+        SDL_FRect textRect = {(WINDOW_WIDTH - txtSurface->w) / 2.0f, 60.0f,
+                              (float)txtSurface->w, (float)txtSurface->h};
+        SDL_RenderTexture(renderer, txtTex, nullptr, &textRect);
+        SDL_DestroyTexture(txtTex);
       }
+      SDL_DestroySurface(txtSurface);
+    }
   }
 
   // Reset the renderer color back to black for the next frame
@@ -308,7 +359,7 @@ void Game::clean() {
   // Mask is freed automatically in CollisionManager's destructor
 
   if (font) {
-      TTF_CloseFont(font);
+    TTF_CloseFont(font);
   }
 
   SDL_DestroyRenderer(renderer);

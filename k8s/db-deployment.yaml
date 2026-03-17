@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-db
+spec:
+  replicas: 1 # Ograniczenie do jednej instancji bazy, ponieważ bez odpowiedniej modyfikacji postgres nie działa w trybie master-master dla replik w K8s.
+  selector:
+    matchLabels:
+      app: postgres-db
+  template:
+    metadata:
+      labels:
+        app: postgres-db
+    spec:
+      containers:
+        - name: postgres-db
+          image: postgres:15-alpine
+          env:
+            - name: POSTGRES_USER
+              value: gameuser
+            - name: POSTGRES_PASSWORD
+              value: gamepassword
+            - name: POSTGRES_DB
+              value: leaderboards
+          ports:
+            - containerPort: 5432
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-service # Wewnątrz klastra nazwa 'db-service' rozwiąże się na IP kontenera bazy.
+spec:
+  selector:
+    app: postgres-db
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

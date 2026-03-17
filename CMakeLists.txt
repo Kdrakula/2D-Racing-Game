@@ -42,12 +42,23 @@ file(GLOB SOURCES "src/*.cpp")
 # Create the executable target (as a macOS App Bundle so it can be clicked)
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
 
-# Automatically copy the assets folder into the .app bundle
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+# Collect all individual asset files so cmake tracks changes to each one
+file(GLOB_RECURSE ASSET_FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/*")
+
+# Compute the destination directory inside the .app bundle
+set(ASSETS_DEST "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/assets")
+
+# Dedicated target that ALWAYS copies assets, depends on each file
+add_custom_target(copy_assets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CMAKE_CURRENT_SOURCE_DIR}/assets"
-    "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Resources/assets"
+        "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+        "${ASSETS_DEST}"
+    DEPENDS ${ASSET_FILES}
+    COMMENT "Syncing assets/ into app bundle..."
 )
+
+# Make sure copy_assets runs BEFORE the binary is linked
+add_dependencies(${PROJECT_NAME} copy_assets)
 
 # Link the SDL3 libraries to the executable
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf httplib::httplib nlohmann_json::nlohmann_json)

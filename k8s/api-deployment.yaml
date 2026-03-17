@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: leaderboard-api
+spec:
+  replicas: 2 # Odpalamy dwie kopie (repliki) na raz, aby K8s uczył się jak rozkładać ruch
+  selector:
+    matchLabels:
+      app: leaderboard-api
+  template:
+    metadata:
+      labels:
+        app: leaderboard-api
+    spec:
+      containers:
+        - name: leaderboard-api
+          image: 2d-racing-game-leaderboard_api:latest
+          imagePullPolicy: Never # Ponieważ używamy obrazu zbudowanego lokalnie (z orbstacka/docker desktopa), instruujemy K8s żeby nie pobierał go z chmury.
+          env:
+            - name: DATABASE_URL
+              value: postgresql://gameuser:gamepassword@db-service/leaderboards
+          ports:
+            - containerPort: 4000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: leaderboard-api-service
+spec:
+  type: LoadBalancer # Typ pozwalający wyeksponować aplikację z K8s "na zewnątrz" - z użyciem minikube/orbstack pozwoli to trafić na na nasz http://localhost:4000
+  selector:
+    app: leaderboard-api
+  ports:
+    - protocol: TCP
+      port: 4000
+      targetPort: 4000

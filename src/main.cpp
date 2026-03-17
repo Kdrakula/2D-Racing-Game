@@ -1,6 +1,14 @@
 #include "engine.hpp"
+#include <filesystem>
+#include <SDL3/SDL.h>
 
 int main(int argc, char* argv[]) {
+    // Setup working directory for macOS app bundles (.app/Contents/Resources/)
+    const char *base_path = SDL_GetBasePath();
+    if (base_path) {
+        std::filesystem::current_path(base_path);
+    }
+
     const int FPS = 60;
     const int frameDelay = 1000 / FPS;
     Uint64 frameStart;

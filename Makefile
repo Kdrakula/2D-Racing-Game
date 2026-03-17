@@ -10,7 +10,7 @@ build:
 # Build the game and then run it from the root directory
 run: build
 	@echo "Starting the game..."
-	./build/MyRacingGame
+	./build/MyRacingGame.app/Contents/MacOS/MyRacingGame
 
 # Completely remove the build folder for a fresh start
 clean:
