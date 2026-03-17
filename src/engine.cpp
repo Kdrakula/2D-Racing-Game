@@ -1,8 +1,12 @@
 #include "engine.hpp"
+#include "debugOverlay.hpp"
 #include "errorLoger.hpp"
 #include "gameConstants.hpp"
 #include "gameObject.hpp"
+#include "leaderboardOverlay.hpp"
+#include "nicknameOverlay.hpp"
 #include "textureManager.hpp"
+#include "updaterOverlay.hpp"
 #include <httplib.h>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -61,7 +65,7 @@ void Game::checkForUpdates() {
   }).detach();
 }
 
-Game::Game(const char *title, int width, int height) {
+Game::Game(const char *title, int width, int height, const TrackInfo &track) {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
     logSDLError(std::cout, "Init");
     isRunning = false;
@@ -99,17 +103,30 @@ Game::Game(const char *title, int width, int height) {
               << SDL_GetError() << std::endl;
   }
 
-  // Load visual background into VRAM (GPU)
-  bg = TextureManager::loadTexture("assets/racetrack.png");
+  // Load visual background from track
+  bg = TextureManager::loadTexture(track.bgAsset.c_str());
 
-  // --- NEW: Load hitmap mask into standard RAM (CPU) ---
-  if (!collision.loadMask("assets/mask.png")) {
+  // Load hitmap mask from track
+  if (!collision.loadMask(track.maskAsset.c_str())) {
     logSDLError(std::cout, "Load Collision Mask");
   }
 
-  player = new GameObject("assets/car.png", 393.0f, 364.0f);
+  player = new GameObject("assets/car.png", track.startX, track.startY);
 
-  // Checkpoints and lap timing have been moved to LapTimer
+  // Initialise live player bounding box (kept in sync in update())
+  playerBox_ = {track.startX, track.startY, 32.0f, 64.0f};
+
+  // Build overlay stack (render order = push order)
+  auto dbg = std::make_unique<DebugOverlay>(isDebugMode, playerBox_, camera,
+                                            lapTimer, player->vel,
+                                            player->angle, GAME_VERSION);
+  debugOverlay_ = dbg.get();
+  overlays.push_back(std::move(dbg));
+  overlays.push_back(
+      std::make_unique<NicknameOverlay>(input.isTypingName, input.playerName));
+  overlays.push_back(
+      std::make_unique<LeaderboardOverlay>(input.showResults, lapTimer));
+  overlays.push_back(std::make_unique<UpdaterOverlay>(updateAvailable));
 
   isRunning = true;
   checkForUpdates();
@@ -192,8 +209,8 @@ void Game::update() {
     camera.y = MAP_HEIGHT - camera.h;
 
   // --- 6. Lap Timing Logic ---
-  SDL_FRect playerBox = {player->posx, player->posy, 32.0f, 64.0f};
-  lapTimer.update(playerBox, WINDOW_WIDTH, WINDOW_HEIGHT, input.playerName);
+  playerBox_ = {player->posx, player->posy, 32.0f, 64.0f};
+  lapTimer.update(playerBox_, WINDOW_WIDTH, WINDOW_HEIGHT, input.playerName);
 
   // 7. Physics Constraints using InputManager
   if (input.up && player->vel < TOP_SPEED)
@@ -243,12 +260,8 @@ void Game::update() {
   }
 
   // --- 8. DEBUG: Live Telemetry ---
-  if (isDebugMode) {
-    std::cout << "\r[DEBUGGGGGGG] X: " << static_cast<int>(player->posx)
-              << " | Y: " << static_cast<int>(player->posy)
-              << " | Vel: " << player->vel
-              << " | Deg: " << static_cast<int>(player->angle * (180.0 / M_PI))
-              << " | XD" << GAME_VERSION << "          " << std::flush;
+  if (isDebugMode && debugOverlay_) {
+    debugOverlay_->renderTelemetry();
   }
 }
 
@@ -263,87 +276,10 @@ void Game::render() {
 
   lapTimer.renderTime(renderer, WINDOW_WIDTH);
 
-  if (input.isTypingName) {
-    std::string prompt = "Type Nickname: " + input.playerName + "_";
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 150);
-    SDL_FRect bgRect = {(WINDOW_WIDTH - 300.0f) / 2.0f, 60.0f, 300.0f, 40.0f};
-    SDL_RenderFillRect(renderer, &bgRect);
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-
-    SDL_RenderDebugText(renderer, bgRect.x + 20, bgRect.y + 10, prompt.c_str());
-  }
-
-  // --- DEVELOPER MODE: Visual Debugging ---
-  if (isDebugMode) {
-    // Enable alpha blending for semi-transparent boxes
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-    // 1. Draw Player Bounding Box (Green, Outline)
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    SDL_FRect debugBox = {player->posx - camera.x, player->posy - camera.y,
-                          32.0f, 64.0f};
-    SDL_RenderRect(renderer, &debugBox);
-
-    lapTimer.renderDebug(renderer, camera);
-
-    // Disable alpha blending to return to normal rendering
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
-
-    // Draw Version text in bottom left corner
-    // Draw Version text in bottom left corner using TTF
-    if (font) {
-      SDL_Color versionColor = {255, 255, 0, 255}; // Yellow text
-      std::string verText = "Developer Mode - Version: ";
-      verText += GAME_VERSION;
-
-      SDL_Surface *verSurface =
-          TTF_RenderText_Blended(font, verText.c_str(), 0, versionColor);
-
-      if (verSurface) {
-        SDL_Texture *verTex =
-            SDL_CreateTextureFromSurface(renderer, verSurface);
-        SDL_DestroySurface(
-            verSurface); // Free surface immediately after texture creation
-        if (verTex) {
-          // Use SDL_GetTextureSize for logical (not physical Retina) dimensions
-          float tw = 0, th = 0;
-          SDL_GetTextureSize(verTex, &tw, &th);
-          SDL_FRect verRect = {10.0f, 10.0f, tw, th};
-          SDL_RenderTexture(renderer, verTex, nullptr, &verRect);
-          SDL_DestroyTexture(verTex);
-        } else {
-          std::cout << "[DEBUG] Failed to create texture: " << SDL_GetError()
-                    << std::endl;
-        }
-      } else {
-        std::cout << "[DEBUG] Failed to create surface: " << SDL_GetError()
-                  << std::endl;
-      }
-    }
-  }
-
-  // --- LEADERBOARD OVERLAY ---
-  if (input.showResults) {
-    lapTimer.renderResults(renderer, WINDOW_WIDTH, WINDOW_HEIGHT);
-  }
-
-  // --- AUTO UPDATER OVERLAY ---
-  if (updateAvailable && font) {
-    SDL_Color textColor = {255, 50, 50, 255}; // Red Text
-    SDL_Surface *txtSurface = TTF_RenderText_Blended(
-        font, "New Update Available! Press U to Restart and Download.", 0,
-        textColor);
-    if (txtSurface) {
-      SDL_Texture *txtTex = SDL_CreateTextureFromSurface(renderer, txtSurface);
-      if (txtTex) {
-        SDL_FRect textRect = {(WINDOW_WIDTH - txtSurface->w) / 2.0f, 60.0f,
-                              (float)txtSurface->w, (float)txtSurface->h};
-        SDL_RenderTexture(renderer, txtTex, nullptr, &textRect);
-        SDL_DestroyTexture(txtTex);
-      }
-      SDL_DestroySurface(txtSurface);
-    }
+  // --- OVERLAYS (each checks its own active condition) ---
+  for (auto &o : overlays) {
+    if (o->isActive())
+      o->render(renderer, font);
   }
 
   // Reset the renderer color back to black for the next frame
