@@ -42,6 +42,21 @@ file(GLOB SOURCES "src/*.cpp")
 # Create the executable target (as a macOS App Bundle so it can be clicked)
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
 
+# ── Auto-detect version from the latest git tag ──────────────────────────────
+execute_process(
+    COMMAND git describe --tags --abbrev=0
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_TAG
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NOT GIT_TAG OR GIT_TAG STREQUAL "")
+    set(GIT_TAG "v-dev")
+endif()
+message(STATUS "Game version: ${GIT_TAG}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE GAME_VERSION="${GIT_TAG}")
+# ─────────────────────────────────────────────────────────────────────────────
+
 # Collect all individual asset files so cmake tracks changes to each one
 file(GLOB_RECURSE ASSET_FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/*")
 

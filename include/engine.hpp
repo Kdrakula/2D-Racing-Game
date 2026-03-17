@@ -45,7 +45,6 @@ private:
   CollisionManager collision;
   LapTimer lapTimer;
 
-  // Overlays (render order = push order)
   std::vector<std::unique_ptr<Overlay>> overlays;
   DebugOverlay *debugOverlay_ = nullptr; // non-owning, for telemetry
 

@@ -13,7 +13,6 @@
 #include <string>
 #include <thread>
 
-#define GAME_VERSION "v1.0"
 
 SDL_Renderer *Game::renderer = nullptr;
 SDL_FRect Game::camera = {0.0f, 0.0f, WINDOW_WIDTH, WINDOW_HEIGHT};

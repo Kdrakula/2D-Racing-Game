@@ -8,7 +8,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-
 DebugOverlay::DebugOverlay(const bool &active, const SDL_FRect &playerBox,
                            const SDL_FRect &camera, LapTimer &lapTimer,
                            const float &vel, const float &angle,
@@ -20,10 +19,9 @@ bool DebugOverlay::isActive() const { return active_; }
 
 void DebugOverlay::renderTelemetry() const {
   std::cout << "\r[DEBUG] X: " << static_cast<int>(playerBox_.x)
-            << " | Y: " << static_cast<int>(playerBox_.y)
-            << " | Vel: " << vel_
+            << " | Y: " << static_cast<int>(playerBox_.y) << " | Vel: " << vel_
             << " | Deg: " << static_cast<int>(angle_ * (180.0 / M_PI))
-            << " | XD" << version_ << "          " << std::flush;
+            << "          " << std::flush;
 }
 
 void DebugOverlay::render(SDL_Renderer *renderer, TTF_Font *font) {

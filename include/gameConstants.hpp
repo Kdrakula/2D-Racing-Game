@@ -2,7 +2,6 @@
 #define GAMECONSTANTS_HPP
 
 #include <string>
-#include <vector>
 
 constexpr float MAP_WIDTH = 7680.0f;
 constexpr float MAP_HEIGHT = 4320.0f;
@@ -21,8 +20,6 @@ struct TrackInfo {
   std::string maskAsset; // e.g. "assets/mask.png"
   float startX;
   float startY;
-  std::vector<SDL_FRect> checkpoints;
-  SDL_FRect finishLine;
 };
 
 #endif
