@@ -15,7 +15,6 @@ Makefile
 
 # Zasoby i dane gry nie są potrzebne serwerowi do budowy obrazu
 assets/
-lap_times.json
 src/
 include/
 

@@ -108,6 +108,13 @@ Game::Game(const char *title, int width, int height, const TrackInfo &track) {
   // Load hitmap mask from track
   if (!collision.loadMask(track.maskAsset.c_str())) {
     logSDLError(std::cout, "Load Collision Mask");
+  } else {
+    // Create a texture for visualization
+    maskTexture = SDL_CreateTextureFromSurface(renderer, collision.getSurface());
+    if (maskTexture) {
+      SDL_SetTextureBlendMode(maskTexture, SDL_BLENDMODE_BLEND);
+      SDL_SetTextureAlphaMod(maskTexture, 128); // 50% transparency
+    }
   }
 
   player = new GameObject("assets/car.png", track.startX, track.startY);
@@ -142,6 +149,11 @@ void Game::handleEvents() {
   if (input.isDebugToggled) {
     isDebugMode = !isDebugMode;
     std::cout << "\n[DEVELOPER MODE] " << (isDebugMode ? "ON" : "OFF")
+              << std::endl;
+  }
+  if (input.showMaskToggled) {
+    input.showMask = !input.showMask;
+    std::cout << "\n[MASK VISUALIZATION] " << (input.showMask ? "ON" : "OFF")
               << std::endl;
   }
 }
@@ -270,6 +282,11 @@ void Game::render() {
   // Render the background relative to the camera
   SDL_RenderTexture(renderer, bg, &camera, nullptr);
 
+  // Render the collision mask if requested
+  if (input.showMask && maskTexture) {
+    SDL_RenderTexture(renderer, maskTexture, &camera, nullptr);
+  }
+
   // Render the player texture
   player->render();
 
@@ -290,6 +307,9 @@ void Game::render() {
 void Game::clean() {
   delete player;
   SDL_DestroyTexture(bg);
+  if (maskTexture) {
+    SDL_DestroyTexture(maskTexture);
+  }
 
   // Mask is freed automatically in CollisionManager's destructor
 

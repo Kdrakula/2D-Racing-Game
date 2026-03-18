@@ -18,6 +18,9 @@ public:
     bool checkMaskCollision(float carX, float carY, float carWidth, float carHeight) const;
     bool checkAABB(const SDL_FRect& a, const SDL_FRect& b) const;
 
+    // Accessors
+    SDL_Surface* getSurface() const { return collisionMask; }
+
 private:
     SDL_Surface* collisionMask = nullptr;
 };

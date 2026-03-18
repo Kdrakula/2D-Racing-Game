@@ -3,20 +3,18 @@ cmake_minimum_required(VERSION 4.1)
 # Define project name and language (C++)
 project(MyRacingGame VERSION 1.0 LANGUAGES CXX)
 
-# Enforce C++17 standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 list(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
 
-# Find SDL3, SDL3_image and SDL3_ttf packages
 find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
 find_package(SDL3_ttf REQUIRED)
 
 include(FetchContent)
 
-# Fetch httplib
+# ─────────────────────────────────────────────────────────────────────────────
 FetchContent_Declare(
         httplib
         GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
@@ -24,7 +22,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(httplib)
 
-# Fetch nlohmann_json directly to avoid relying on brew
 FetchContent_Declare(
         nlohmann_json
         GIT_REPOSITORY https://github.com/nlohmann/json.git
@@ -32,6 +29,7 @@ FetchContent_Declare(
         GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(nlohmann_json)
+# ─────────────────────────────────────────────────────────────────────────────
 
 # Include header files directory
 include_directories(include)
@@ -55,6 +53,9 @@ if(NOT GIT_TAG OR GIT_TAG STREQUAL "")
 endif()
 message(STATUS "Game version: ${GIT_TAG}")
 target_compile_definitions(${PROJECT_NAME} PRIVATE GAME_VERSION="${GIT_TAG}")
+
+string(REGEX REPLACE "^v" "" PROJECT_VER ${GIT_TAG})
+project(MyRacingGame VERSION ${PROJECT_VER} LANGUAGES CXX)
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Collect all individual asset files so cmake tracks changes to each one

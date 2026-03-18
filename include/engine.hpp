@@ -38,6 +38,7 @@ private:
   SDL_Window *window = nullptr;
   GameObject *player = nullptr;
   SDL_Texture *bg = nullptr;
+  SDL_Texture *maskTexture = nullptr;
 
   SDL_FRect playerBox_ = {0, 0, 32.0f, 64.0f};
 

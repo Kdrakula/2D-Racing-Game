@@ -15,7 +15,10 @@ public:
   // Public state variables
   bool isQuitRequested = false;
   bool isDebugToggled = false;
+  bool showMaskToggled = false;
   bool showResults = false;
+
+  bool showMask = false;
 
   bool isTypingName = false;
   std::string playerName = "Player";

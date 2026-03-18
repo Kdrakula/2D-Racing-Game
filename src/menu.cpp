@@ -22,10 +22,10 @@ std::string Menu::resolveAsset(const std::string &relative) const {
 // Construction / Destruction
 // ---------------------------------------------------------------------------
 Menu::Menu() {
-  tracks_ = {
-      {"Desert Speedway", "assets/racetrack.png", "assets/mask.png", 393.0f,
-       364.0f},
-  };
+  tracks_ = {{"Desert Speedway", "assets/racetrack.png", "assets/mask.png",
+              393.0f, 364.0f},
+             {"F1 Race Track", "assets/Racetrack 2.png",
+              "assets/RacetrackMask.png", 100.0f, 100.0f}};
 }
 
 Menu::~Menu() {}
@@ -107,7 +107,8 @@ void Menu::handleEvents() {
         break;
       case SDL_SCANCODE_RIGHT:
       case SDL_SCANCODE_DOWN:
-        selectedIndex_ = (selectedIndex_ + 1) % static_cast<int>(tracks_.size());
+        selectedIndex_ =
+            (selectedIndex_ + 1) % static_cast<int>(tracks_.size());
         break;
       case SDL_SCANCODE_RETURN:
       case SDL_SCANCODE_KP_ENTER:
@@ -130,9 +131,11 @@ void Menu::handleEvents() {
 // ---------------------------------------------------------------------------
 static void renderText(SDL_Renderer *r, TTF_Font *font, const std::string &text,
                        SDL_Color color, float x, float y) {
-  if (!font) return;
+  if (!font)
+    return;
   SDL_Surface *surf = TTF_RenderText_Blended(font, text.c_str(), 0, color);
-  if (!surf) return;
+  if (!surf)
+    return;
   SDL_Texture *tex = SDL_CreateTextureFromSurface(r, surf);
   if (tex) {
     float tw = 0, th = 0;
@@ -154,7 +157,8 @@ void Menu::render() {
 
   // Subtle horizontal gradient bands
   for (int i = 0; i < static_cast<int>(WINDOW_HEIGHT); ++i) {
-    Uint8 v = static_cast<Uint8>(10 + (i * 18) / static_cast<int>(WINDOW_HEIGHT));
+    Uint8 v =
+        static_cast<Uint8>(10 + (i * 18) / static_cast<int>(WINDOW_HEIGHT));
     SDL_SetRenderDrawColor(renderer_, v / 2, v / 2, v, 255);
     SDL_FRect line = {0, static_cast<float>(i), WINDOW_WIDTH, 1};
     SDL_RenderFillRect(renderer_, &line);
@@ -224,8 +228,8 @@ void Menu::render() {
       // Fallback: solid colour placeholder
       SDL_SetRenderDrawColor(renderer_, 40, 80, 60, 255);
       SDL_RenderFillRect(renderer_, &thumbDst);
-      renderText(renderer_, bodyFont_, "[ No Preview ]", grey,
-                 cx + 140.0f, cardY + THUMB_H / 2.0f - 11.0f);
+      renderText(renderer_, bodyFont_, "[ No Preview ]", grey, cx + 140.0f,
+                 cardY + THUMB_H / 2.0f - 11.0f);
     }
 
     // Name bar background
@@ -237,16 +241,16 @@ void Menu::render() {
     // Track name
     SDL_Color nameColor = selected ? gold : white;
     if (bodyFont_) {
-      SDL_Surface *ns =
-          TTF_RenderText_Blended(bodyFont_, tracks_[i].name.c_str(), 0, nameColor);
+      SDL_Surface *ns = TTF_RenderText_Blended(
+          bodyFont_, tracks_[i].name.c_str(), 0, nameColor);
       if (ns) {
         SDL_Texture *nt = SDL_CreateTextureFromSurface(renderer_, ns);
         if (nt) {
           float tw = 0, th = 0;
           SDL_GetTextureSize(nt, &tw, &th);
           SDL_FRect dst = {cx + (CARD_W - tw) / 2.0f,
-                           cardY + THUMB_H + (CARD_H - THUMB_H - th) / 2.0f,
-                           tw, th};
+                           cardY + THUMB_H + (CARD_H - THUMB_H - th) / 2.0f, tw,
+                           th};
           SDL_RenderTexture(renderer_, nt, nullptr, &dst);
           SDL_DestroyTexture(nt);
         }
@@ -257,8 +261,8 @@ void Menu::render() {
 
   // --- Bottom instructions ---
   renderText(renderer_, bodyFont_,
-             "  ←  →  to select     ENTER to race     ESC to quit",
-             grey, 0, WINDOW_HEIGHT - 40.0f);
+             "  ←  →  to select     ENTER to race     ESC to quit", grey, 0,
+             WINDOW_HEIGHT - 40.0f);
   // Centre the hint
   if (bodyFont_) {
     const std::string hint =
@@ -269,8 +273,8 @@ void Menu::render() {
       if (ht) {
         float tw = 0, th = 0;
         SDL_GetTextureSize(ht, &tw, &th);
-        SDL_FRect dst = {(WINDOW_WIDTH - tw) / 2.0f, WINDOW_HEIGHT - 46.0f,
-                         tw, th};
+        SDL_FRect dst = {(WINDOW_WIDTH - tw) / 2.0f, WINDOW_HEIGHT - 46.0f, tw,
+                         th};
         SDL_RenderTexture(renderer_, ht, nullptr, &dst);
         SDL_DestroyTexture(ht);
       }
@@ -286,14 +290,19 @@ void Menu::render() {
 // ---------------------------------------------------------------------------
 void Menu::clean() {
   for (auto *t : thumbnails_) {
-    if (t) SDL_DestroyTexture(t);
+    if (t)
+      SDL_DestroyTexture(t);
   }
   thumbnails_.clear();
 
-  if (titleFont_) TTF_CloseFont(titleFont_);
-  if (bodyFont_) TTF_CloseFont(bodyFont_);
-  if (renderer_) SDL_DestroyRenderer(renderer_);
-  if (window_) SDL_DestroyWindow(window_);
+  if (titleFont_)
+    TTF_CloseFont(titleFont_);
+  if (bodyFont_)
+    TTF_CloseFont(bodyFont_);
+  if (renderer_)
+    SDL_DestroyRenderer(renderer_);
+  if (window_)
+    SDL_DestroyWindow(window_);
   TTF_Quit();
   SDL_Quit();
 }

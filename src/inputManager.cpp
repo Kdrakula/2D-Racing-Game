@@ -7,6 +7,7 @@ InputManager::~InputManager() {}
 void InputManager::update() {
   // Reset one-frame flags
   isDebugToggled = false;
+  showMaskToggled = false;
 
   SDL_Event event;
   while (SDL_PollEvent(&event)) {
@@ -19,6 +20,9 @@ void InputManager::update() {
         break;
       case SDLK_L:
         isDebugToggled = true;
+        break;
+      case SDLK_M:
+        showMaskToggled = true;
         break;
       case SDLK_TAB:
         showResults = true;
