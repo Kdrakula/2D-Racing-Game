@@ -28,6 +28,11 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
 
+    - name: Sign App Bundle (ad-hoc)
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        codesign --deep --force --sign - build/MyRacingGame.app
+
     - name: Package App Bundle
       if: startsWith(github.ref, 'refs/tags/')
       run: |
