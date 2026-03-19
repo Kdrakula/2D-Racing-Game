@@ -49,7 +49,7 @@ execute_process(
     ERROR_QUIET
 )
 if(NOT GIT_TAG OR GIT_TAG STREQUAL "")
-    set(GIT_TAG "v-dev")
+    set(GIT_TAG)
 endif()
 message(STATUS "Game version: ${GIT_TAG}")
 target_compile_definitions(${PROJECT_NAME} PRIVATE GAME_VERSION="${GIT_TAG}")
@@ -78,3 +78,49 @@ add_dependencies(${PROJECT_NAME} copy_assets)
 
 # Link the SDL3 libraries to the executable
 target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf httplib::httplib nlohmann_json::nlohmann_json)
+
+# ── macOS Portability: Bundle SDL libraries ──────────────────────────────────
+if(APPLE)
+    # Define destination for frameworks
+    set(FRAMEWORKS_DEST "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../Frameworks")
+
+    # List of libraries to bundle (Homebrew paths)
+    set(SDL_LIBS
+        "/opt/homebrew/opt/sdl3/lib/libSDL3.0.dylib"
+        "/opt/homebrew/opt/sdl3_image/lib/libSDL3_image.0.dylib"
+        "/opt/homebrew/opt/sdl3_ttf/lib/libSDL3_ttf.0.dylib"
+    )
+
+    # Create the Frameworks directory
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${FRAMEWORKS_DEST}"
+        COMMENT "Creating Frameworks directory..."
+    )
+
+    # Copy libraries and fix their install names
+    foreach(LIB_PATH ${SDL_LIBS})
+        get_filename_component(LIB_NAME ${LIB_PATH} NAME)
+        
+        # 1. Copy the library
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "${LIB_PATH}" "${FRAMEWORKS_DEST}/${LIB_NAME}"
+            COMMENT "Bundling ${LIB_NAME}..."
+        )
+
+        # 2. Fix the library's own ID to be relative to the executable
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND install_name_tool -id "@executable_path/../Frameworks/${LIB_NAME}" "${FRAMEWORKS_DEST}/${LIB_NAME}"
+        )
+
+        # 3. Point the main binary to this bundled library
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND install_name_tool -change "${LIB_PATH}" "@executable_path/../Frameworks/${LIB_NAME}" "$<TARGET_FILE:${PROJECT_NAME}>"
+        )
+    endforeach()
+
+    # Also handle dependencies (SDL_image and SDL_ttf depend on SDL3)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND install_name_tool -change "/opt/homebrew/opt/sdl3/lib/libSDL3.0.dylib" "@executable_path/../Frameworks/libSDL3.0.dylib" "${FRAMEWORKS_DEST}/libSDL3_image.0.dylib"
+        COMMAND install_name_tool -change "/opt/homebrew/opt/sdl3/lib/libSDL3.0.dylib" "@executable_path/../Frameworks/libSDL3.0.dylib" "${FRAMEWORKS_DEST}/libSDL3_ttf.0.dylib"
+    )
+endif()
