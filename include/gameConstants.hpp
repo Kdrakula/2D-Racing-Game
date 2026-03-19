@@ -16,8 +16,8 @@ constexpr float DEACCELERATION = 0.02f;
 
 struct TrackInfo {
   std::string name;
-  std::string bgAsset;   // e.g. "assets/racetrack.png"
-  std::string maskAsset; // e.g. "assets/mask.png"
+  std::string bgAsset;   // e.g. "assets/track-1.png"
+  std::string maskAsset; // e.g. "assets/maks-1.png"
   float startX;
   float startY;
 };

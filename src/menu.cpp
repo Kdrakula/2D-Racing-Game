@@ -22,10 +22,10 @@ std::string Menu::resolveAsset(const std::string &relative) const {
 // Construction / Destruction
 // ---------------------------------------------------------------------------
 Menu::Menu() {
-  tracks_ = {{"Desert Speedway", "assets/racetrack.png", "assets/mask.png",
-              393.0f, 364.0f},
-             {"F1 Race Track", "assets/Racetrack 2.png",
-              "assets/RacetrackMask.png", 100.0f, 100.0f}};
+  tracks_ = {{"Desert Speedway", "assets/track-1.png",
+              "assets/maks-1.png", 393.0f, 364.0f},
+             {"F1 Race Track", "assets/track-2.png",
+              "assets/mask-2.png", 2034.0f, 1635.0f}};
 }
 
 Menu::~Menu() {}
