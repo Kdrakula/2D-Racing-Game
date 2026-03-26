@@ -9,6 +9,8 @@ build:
 
 # Build the game and then run it from the root directory
 run: build
+	@echo "Signing the application bundle..."
+	codesign --force --deep --sign - ./build/MyRacingGame.app
 	@echo "Starting the game..."
 	./build/MyRacingGame.app/Contents/MacOS/MyRacingGame
 
