@@ -6,6 +6,7 @@
 build:
 	@mkdir -p build
 	@cd build && cmake .. && make
+	@xattr -cr build/MyRacingGame.app/Contents/MacOS/MyRacingGame # todo fix
 
 # Build the game and then run it from the root directory
 run: build

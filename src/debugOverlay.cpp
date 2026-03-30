@@ -33,7 +33,6 @@ void DebugOverlay::render(SDL_Renderer *renderer, TTF_Font *font) {
                         playerBox_.w, playerBox_.h};
   SDL_RenderRect(renderer, &debugBox);
 
-  lapTimer_.renderDebug(renderer, camera_);
 
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 

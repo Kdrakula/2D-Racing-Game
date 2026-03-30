@@ -22,11 +22,24 @@ std::string Menu::resolveAsset(const std::string &relative) const {
 // Construction / Destruction
 // ---------------------------------------------------------------------------
 Menu::Menu() {
-  tracks_ = {{"Desert Speedway", "assets/track-1.png",
-              "assets/maks-1.png", 393.0f, 364.0f},
-             {"F1 Race Track", "assets/track-2.png",
-              "assets/mask-2.png", 2034.0f, 1635.0f}};
-}
+  tracks_ = {
+      {"Desert Speedway",
+       "assets/track-1.png",
+       "assets/maks-1.png",
+       393.0f, 364.0f, // starting posistion
+       {2360.0f, 1500.0f, 200.0f, 50.0f}, // finishLine
+       {{2360.0f, 1600.0f, 200.0f, 50.0f},
+        {4000.0f, 2000.0f, 200.0f, 50.0f}}}, // checkpoints
+      {"F1 Race Track",
+       "assets/track-2.png",
+       "assets/mask-2.png",
+       2034.0f,
+       1635.0f,
+       {2034.0f, 1500.0f, 200.0f, 50.0f}, // finishLine
+       {{2500.0f, 1600.0f, 200.0f, 50.0f},
+        {3000.0f, 2500.0f, 50.0f, 200.0f}}}}; // checkpoints
+} // todo all tracks should contain their whole information in one file
+// todo add map generator
 
 Menu::~Menu() {}
 
@@ -39,6 +52,8 @@ bool Menu::run() {
     handleEvents();
     render();
     SDL_Delay(16); // ~60 fps
+    // todo correct FPS handling
+    //todo ping to server
   }
   clean();
   return confirmed_;
@@ -90,7 +105,7 @@ void Menu::init() {
 // ---------------------------------------------------------------------------
 // handleEvents
 // ---------------------------------------------------------------------------
-void Menu::handleEvents() {
+void Menu::handleEvents() { // todo menu shouldn't be another window
   SDL_Event e;
   while (SDL_PollEvent(&e)) {
     if (e.type == SDL_EVENT_QUIT) {
@@ -261,7 +276,7 @@ void Menu::render() {
 
   // --- Bottom instructions ---
   renderText(renderer_, bodyFont_,
-             "  ←  →  to select     ENTER to race     ESC to quit", grey, 0,
+             " <- ->  to select     ENTER to race     ESC to quit", grey, 0,
              WINDOW_HEIGHT - 40.0f);
   // Centre the hint
   if (bodyFont_) {

@@ -64,7 +64,8 @@ void Game::checkForUpdates() {
   }).detach();
 }
 
-Game::Game(const char *title, int width, int height, const TrackInfo &track) {
+Game::Game(const char *title, int width, int height, const TrackInfo &track)
+    : track_(track) {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
     logSDLError(std::cout, "Init");
     isRunning = false;
@@ -221,7 +222,7 @@ void Game::update() {
 
   // --- 6. Lap Timing Logic ---
   playerBox_ = {player->posx, player->posy, 32.0f, 64.0f};
-  lapTimer.update(playerBox_, WINDOW_WIDTH, WINDOW_HEIGHT, input.playerName);
+  lapTimer.update(playerBox_, track_);
 
   // 7. Physics Constraints using InputManager
   if (input.up && player->vel < TOP_SPEED)
@@ -291,6 +292,7 @@ void Game::render() {
   player->render();
 
   lapTimer.renderTime(renderer, WINDOW_WIDTH);
+  lapTimer.render(renderer, camera, isDebugMode, track_);
 
   // --- OVERLAYS (each checks its own active condition) ---
   for (auto &o : overlays) {

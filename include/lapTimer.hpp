@@ -1,21 +1,23 @@
 #ifndef LAPTIMER_HPP
 #define LAPTIMER_HPP
 
+#include "gameConstants.hpp"
 #include <SDL3/SDL.h>
-#include <mutex>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <string>
 #include <vector>
+#include <mutex>
 
 class LapTimer {
 public:
   LapTimer();
 
-  // Pass the player's bounding box and hit checkpoint status
-  void update(const SDL_FRect &playerBox, float windowWidth, float windowHeight,
-              const std::string &playerName);
+  // Pass the player's bounding box and track info
+  void update(const SDL_FRect &playerBox, const TrackInfo &track);
 
   // Draw the finish line and checkpoints when debug is true
-  void renderDebug(SDL_Renderer *renderer, const SDL_FRect &camera);
+  void render(SDL_Renderer *renderer, const SDL_FRect &camera, bool debug,
+              const TrackInfo &track);
 
   // Render on-screen timer
   void renderTime(SDL_Renderer *renderer, float windowWidth);
@@ -26,10 +28,15 @@ public:
 
 private:
   SDL_FRect finishLine;
-  SDL_FRect checkpoint;
-  bool hitCheckpoint;
-  Uint64 lapStartTime;
-  Uint64 bestLapTime;
+  std::vector<SDL_FRect> checkpoints;
+  std::vector<bool> hitCheckpoints;
+  std::string currentTrackName;
+
+  Uint64 startTime;
+  float lastLapTime;
+  float bestLapTime;
+  bool isLapStarted;
+  bool bestLapSet;
 
   // Leaderboard data
   struct LapRecord {
@@ -44,7 +51,9 @@ private:
   bool checkAABB(const SDL_FRect &a, const SDL_FRect &b) const;
 
   // Async leaderboard fetching
-  void fetchLeaderboard();
+  void fetchLeaderboard(const std::string &trackName);
+  void sendLapTime(const std::string &playerName, float time,
+                   const std::string &trackName);
 };
 
 #endif

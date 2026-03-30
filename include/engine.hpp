@@ -49,6 +49,8 @@ private:
   std::vector<std::unique_ptr<Overlay>> overlays;
   DebugOverlay *debugOverlay_ = nullptr; // non-owning, for telemetry
 
+  TrackInfo track_;
+
   // --- Auto-Updater ---
   bool updateAvailable = false;
   std::string updateDownloadUrl;

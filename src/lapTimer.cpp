@@ -6,17 +6,14 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <nlohmann/json.hpp> // For JSON serialization
 
 LapTimer::LapTimer() {
-  finishLine = {300.0f, 400.0f, 200.0f, 50.0f};
-  checkpoint = {2360.0f, 1600.0f, 200.0f, 50.0f};
-
-  hitCheckpoint = false;
-  lapStartTime = SDL_GetTicks();
-  bestLapTime = 0;
-
-  // Fetch immediately on startup
-  fetchLeaderboard();
+  startTime = SDL_GetTicks();
+  lastLapTime = 0.0f;
+  bestLapTime = 0.0f;
+  isLapStarted = false;
+  bestLapSet = false;
 }
 
 bool LapTimer::checkAABB(const SDL_FRect &a, const SDL_FRect &b) const {
@@ -24,140 +21,136 @@ bool LapTimer::checkAABB(const SDL_FRect &a, const SDL_FRect &b) const {
           a.y + a.h > b.y);
 }
 
-void LapTimer::fetchLeaderboard() {
-  std::thread([this]() {
-    httplib::Client cli(
-        "http://127.0.0.1:4000"); // Use IPv4 loopback directly to avoid IPv6
-                                  // resolution issues
+void LapTimer::fetchLeaderboard(const std::string &trackName) {
+  currentTrackName = trackName;
+  std::thread([this, trackName]() {
+    httplib::Client cli("http://localhost:4000");
+    std::string url = "/api/laptimes?map_id=" + trackName;
 
-    if (auto res = cli.Get("/api/laptimes")) {
+    if (auto res = cli.Get(url.c_str())) {
       if (res->status == 200) {
         std::vector<LapRecord> newRecords;
 
-        // Very basic JSON parser for the expected array format
-        // e.g. [{"player": "Kuba", "time": 12.5}, ...]
-        std::string body = res->body;
-        size_t pos = 0;
-
-        while ((pos = body.find("\"player\"", pos)) != std::string::npos) {
-          LapRecord record;
-
-          // Extract player name
-          size_t playerStart = body.find("\"", pos + 8);
-          if (playerStart == std::string::npos)
-            break;
-          playerStart += 1;
-          size_t playerEnd = body.find("\"", playerStart);
-          if (playerEnd != std::string::npos) {
-            record.player = body.substr(playerStart, playerEnd - playerStart);
+        try {
+          auto json = nlohmann::json::parse(res->body);
+          for (const auto &item : json) {
+            LapRecord record;
+            record.player = item.value("player", "Unknown");
+            record.time = item.value("time", 0.0f);
+            record.date = item.value("date", "");
+            newRecords.push_back(record);
           }
-
-          // Extract time
-          size_t timePos = body.find("\"time\"", playerEnd);
-          if (timePos == std::string::npos)
-            break;
-
-          size_t colonPos = body.find(":", timePos);
-          if (colonPos == std::string::npos)
-            break;
-
-          size_t timeStart = colonPos + 1;
-          while (timeStart < body.length() && std::isspace(body[timeStart])) {
-            timeStart++;
-          }
-
-          size_t timeEnd = timeStart;
-          while (timeEnd < body.length() &&
-                 (std::isdigit(body[timeEnd]) || body[timeEnd] == '.')) {
-            timeEnd++;
-          }
-
-          if (timeStart < timeEnd) {
-            try {
-              record.time =
-                  std::stof(body.substr(timeStart, timeEnd - timeStart));
-            } catch (...) {
-              record.time = 0.0f;
-            }
-          }
-
-          // Extract date
-          size_t datePos = body.find("\"date\"", timeEnd);
-          if (datePos != std::string::npos &&
-              datePos < body.find("}", timeEnd)) {
-            size_t dateStart = body.find("\"", datePos + 6);
-            if (dateStart != std::string::npos) {
-              dateStart += 1;
-              size_t dateEnd = body.find("\"", dateStart);
-              if (dateEnd != std::string::npos) {
-                record.date = body.substr(dateStart, dateEnd - dateStart);
-                pos = dateEnd;
-              } else {
-                pos = timeEnd;
-              }
-            } else {
-              pos = timeEnd;
-            }
-          } else {
-            pos = timeEnd;
-          }
-
-          newRecords.push_back(record);
+        } catch (const nlohmann::json::parse_error &e) {
+          std::cerr << "[NETWORK] JSON parse error: " << e.what() << std::endl;
         }
 
         std::lock_guard<std::mutex> lock(recordsMutex);
         topRecords = newRecords;
+      } else {
+        std::cerr << "[NETWORK] Failed to fetch leaderboard. Status: "
+                  << res->status << std::endl;
       }
+    } else {
+      std::cerr << "[NETWORK] Failed to reach leaderboard server. Error: "
+                << httplib::to_string(res.error()) << std::endl;
     }
   }).detach();
 }
 
-void LapTimer::update(const SDL_FRect &playerBox, float windowWidth,
-                      float windowHeight, const std::string &playerName) {
+void LapTimer::sendLapTime(const std::string &playerName, float time,
+                            const std::string &trackName) {
+  std::thread([playerName, time, trackName]() {
+    httplib::Client cli("http://localhost:4000");
+    std::string url = "/api/laptime";
+
+    nlohmann::json j;
+    j["player"] = playerName;
+    j["map_id"] = trackName;
+    j["time"] = time;
+
+    std::string payload = j.dump();
+
+    if (auto res = cli.Post(url.c_str(), payload, "application/json")) {
+      std::cout << "\n[NETWORK] Successfully sent lap time to server! Status: "
+                << res->status << std::endl;
+    } else {
+      std::cerr << "\n[NETWORK] Failed to send lap time to server. Error: "
+                << httplib::to_string(res.error()) << std::endl;
+    }
+  }).detach();
+}
+
+void LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track) {
+  // Initialize track checkpoints if needed (or just use them from track)
+  if (currentTrackName != track.name) {
+    currentTrackName = track.name;
+    checkpoints = track.checkpoints;
+    finishLine = track.finishLine;
+    hitCheckpoints.assign(checkpoints.size(), false);
+    isLapStarted = false; // Reset lap state for new track
+    fetchLeaderboard(track.name);
+  }
 
   Uint64 currentTime = SDL_GetTicks();
 
-  if (!hitCheckpoint && checkAABB(playerBox, checkpoint)) {
-    hitCheckpoint = true;
-    std::cout << "\n[CHECKPOINT] Reached!" << std::endl;
+  // Start lap when player crosses finish line for the first time or after a lap
+  if (!isLapStarted && checkAABB(playerBox, finishLine)) {
+    isLapStarted = true;
+    startTime = currentTime;
+    std::cout << "\n[LAP] Started!" << std::endl;
   }
 
-  if (hitCheckpoint && checkAABB(playerBox, finishLine)) {
-    hitCheckpoint = false;
-    Uint64 currentLapTime = currentTime - lapStartTime;
-    float timeInSeconds = currentLapTime / 1000.0f;
+  if (!isLapStarted) {
+    return; // Don't process checkpoints or finish line if lap hasn't started
+  }
 
-    std::cout << "\n[LAP FINISHED] Time: " << timeInSeconds << "s" << std::endl;
+  // Check checkpoints in order
+  for (size_t i = 0; i < checkpoints.size(); ++i) {
+    // A checkpoint can only be hit if the previous one was hit (or it's the first one)
+    bool previousHit = (i == 0) ? true : hitCheckpoints[i - 1];
+    if (previousHit && !hitCheckpoints[i] &&
+        checkAABB(playerBox, checkpoints[i])) {
+      hitCheckpoints[i] = true;
+      std::cout << "\n[CHECKPOINT] " << (i + 1) << " / " << checkpoints.size()
+                << " Reached!" << std::endl;
+    }
+  }
 
-    if (bestLapTime == 0 || currentLapTime < bestLapTime) {
-      bestLapTime = currentLapTime;
-      std::cout << ">>> NEW BEST LAP: " << timeInSeconds << "s <<<"
-                << std::endl;
+  // Check finish line - only counts if ALL checkpoints were hit
+  bool allCheckpointsHit = true;
+  for (bool hit : hitCheckpoints) {
+    if (!hit) {
+      allCheckpointsHit = false;
+      break;
+    }
+  }
+
+  if (allCheckpointsHit && checkAABB(playerBox, finishLine)) {
+    // Reset checkpoints
+    for (size_t i = 0; i < hitCheckpoints.size(); ++i) {
+      hitCheckpoints[i] = false;
+    }
+    isLapStarted = false; // Lap finished, reset for next lap start
+
+    lastLapTime = (currentTime - startTime) / 1000.0f;
+
+    std::cout << "\n[LAP FINISHED] Time: " << lastLapTime << "s" << std::endl;
+
+    if (!bestLapSet || lastLapTime < bestLapTime) {
+      bestLapTime = lastLapTime;
+      bestLapSet = true;
+      std::cout << ">>> NEW BEST LAP: " << bestLapTime << "s <<<" << std::endl;
 
       // Send to backend on a background thread
-      std::thread([this, timeInSeconds, playerName]() {
-        httplib::Client cli(
-            "http://127.0.0.1:4000"); // Updated port and proxy info
-
-        std::string payload = "{\"player\": \"" + playerName +
-                              "\", \"time\": " + std::to_string(timeInSeconds) +
-                              "}";
-
-        if (auto res = cli.Post("/api/laptime", payload, "application/json")) {
-          std::cout
-              << "\n[NETWORK] Successfully sent best lap to server! Status: "
-              << res->status << std::endl;
-        } else {
-          std::cout << "\n[NETWORK] Failed to reach the server. Error: "
-                    << to_string(res.error()) << std::endl;
-        }
+      std::string tName = track.name;
+      float lTime = lastLapTime;
+      std::thread([this, lTime, tName]() {
+        sendLapTime("Player1", lTime, tName);
 
         // Fetch leaderboard again as it has been updated
-        fetchLeaderboard();
+        fetchLeaderboard(tName);
       }).detach();
     }
-
-    lapStartTime = SDL_GetTicks();
   }
 }
 
@@ -247,29 +240,40 @@ void LapTimer::renderResults(SDL_Renderer *renderer, float windowWidth,
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
 
-void LapTimer::renderDebug(SDL_Renderer *renderer, const SDL_FRect &camera) {
+void LapTimer::render(SDL_Renderer *renderer, const SDL_FRect &camera, bool debug,
+                       const TrackInfo &track) {
+  if (!debug)
+    return;
+
   // Enable alpha blending for semi-transparent boxes
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
-  // Draw Finish Line (Blue, Semi-transparent fill)
-  SDL_SetRenderDrawColor(renderer, 0, 0, 255, 100);
-  SDL_FRect renderFinish = {finishLine.x - camera.x, finishLine.y - camera.y,
-                            finishLine.w, finishLine.h};
+  // Draw Finish Line (Red, Semi-transparent fill)
+  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100);
+  SDL_FRect renderFinish = {track.finishLine.x - camera.x,
+                            track.finishLine.y - camera.y, track.finishLine.w,
+                            track.finishLine.h};
   SDL_RenderFillRect(renderer, &renderFinish);
 
-  // Draw Checkpoint (Yellow, Semi-transparent fill)
-  SDL_SetRenderDrawColor(renderer, 255, 255, 0, 100);
-  SDL_FRect renderCheckpoint = {checkpoint.x - camera.x,
-                                checkpoint.y - camera.y, checkpoint.w,
-                                checkpoint.h};
-  SDL_RenderFillRect(renderer, &renderCheckpoint);
-
+  // Draw Checkpoints
+  for (size_t i = 0; i < track.checkpoints.size(); ++i) {
+    bool hit = (i < hitCheckpoints.size()) ? hitCheckpoints[i] : false;
+    if (hit) {
+      SDL_SetRenderDrawColor(renderer, 0, 255, 0, 100); // Green if hit
+    } else {
+      SDL_SetRenderDrawColor(renderer, 255, 255, 0, 100); // Yellow if not hit
+    }
+    SDL_FRect renderCP = {track.checkpoints[i].x - camera.x,
+                          track.checkpoints[i].y - camera.y,
+                          track.checkpoints[i].w, track.checkpoints[i].h};
+    SDL_RenderFillRect(renderer, &renderCP);
+  }
   // Disable alpha blending to return to normal rendering
   SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
 }
 
 void LapTimer::renderTime(SDL_Renderer *renderer, float windowWidth) {
-  Uint64 currentLapTime = SDL_GetTicks() - lapStartTime;
+  Uint64 currentLapTime = SDL_GetTicks() - startTime;
   float timeInSeconds = currentLapTime / 1000.0f;
 
   std::stringstream ss;
