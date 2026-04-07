@@ -48,14 +48,23 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
     ERROR_QUIET
 )
+# 1. Fallback to a valid default version if GIT_TAG is empty
 if(NOT GIT_TAG OR GIT_TAG STREQUAL "")
-    set(GIT_TAG)
+    set(GIT_TAG "v1.0.0")
 endif()
-message(STATUS "Game version: ${GIT_TAG}")
-target_compile_definitions(${PROJECT_NAME} PRIVATE GAME_VERSION="${GIT_TAG}")
 
-string(REGEX REPLACE "^v" "" PROJECT_VER ${GIT_TAG})
-project(MyRacingGame VERSION ${PROJECT_VER} LANGUAGES CXX)
+message(STATUS "Game version: ${GIT_TAG}")
+
+# 2. Safely remove the "v" prefix. Quotes around "${GIT_TAG}" prevent argument errors.
+string(REGEX REPLACE "^v" "" PROJECT_VER "${GIT_TAG}")
+
+# 3. Initialize the project FIRST. This defines ${PROJECT_NAME} and the VERSION.
+project(MyRacingGame VERSION "${PROJECT_VER}" LANGUAGES CXX)
+
+# NOTE: target_compile_definitions MUST be placed further down in your file,
+# strictly AFTER you declare: add_executable(${PROJECT_NAME} ...)
+# If you want it global before add_executable, use add_compile_definitions instead:
+add_compile_definitions(GAME_VERSION="${GIT_TAG}")
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Collect all individual asset files so cmake tracks changes to each one
