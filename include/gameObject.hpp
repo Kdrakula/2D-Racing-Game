@@ -5,7 +5,7 @@
 
 class GameObject {
 public:
-  GameObject(const char *tex, float x, float y);
+  GameObject(const char *tex, float x, float y, double startAngle);
   ~GameObject();
 
   void update();

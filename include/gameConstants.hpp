@@ -22,6 +22,7 @@ struct TrackInfo {
   std::string maskAsset; // e.g. "assets/maks-1.png"
   float startX;
   float startY;
+  double startAngle;
   SDL_FRect finishLine;
   std::vector<SDL_FRect> checkpoints;
 };

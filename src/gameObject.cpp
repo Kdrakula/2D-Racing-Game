@@ -7,13 +7,13 @@ const float SPEED = 2.0f;
 const float STEERING_SPEED = 0.05f;
 const float SCALE = 1.0f;
 
-GameObject::GameObject(const char *tex, float x, float y) {
+GameObject::GameObject(const char *tex, float x, float y, double startAngle) {
   objTexture = TextureManager::loadTexture(tex);
   posx = x;
   posy = y;
-  angle = M_PI;
-  srcRect = {0.0f, 0.0f, 64.0f, 64.0f};
-  dstRect = {0.0f, 0.0f, 64.0f * SCALE, 64.0f * SCALE};
+  angle = startAngle;
+  srcRect = {0.0f, 0.0f, 32.0f, 64.0f};
+  dstRect = {0.0f, 0.0f, 32.0f * SCALE, 64.0f * SCALE};
 }
 
 GameObject::~GameObject() {

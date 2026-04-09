@@ -118,7 +118,7 @@ Game::Game(const char *title, int width, int height, const TrackInfo &track)
     }
   }
 
-  player = new GameObject("assets/car.png", track.startX, track.startY);
+  player = new GameObject("assets/car.png", track.startX, track.startY, track.startAngle);
 
   // Initialise live player bounding box (kept in sync in update())
   playerBox_ = {track.startX, track.startY, 32.0f, 64.0f};
