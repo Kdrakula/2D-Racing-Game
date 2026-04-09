@@ -120,6 +120,9 @@ Game::Game(const char *title, int width, int height, const TrackInfo &track)
 
   player = new GameObject("assets/car.png", track.startX, track.startY, track.startAngle);
 
+  // Load ghost metadata for track
+  ghostManager.loadGhost(track.name);
+
   // Initialise live player bounding box (kept in sync in update())
   playerBox_ = {track.startX, track.startY, 32.0f, 64.0f};
 
@@ -196,7 +199,7 @@ void Game::update() {
   }
 
   // --- 4. Mask Collision Check ---
-  if (collision.checkMaskCollision(player->posx, player->posy, 32.0f, 64.0f)) {
+  if (collision.checkMaskCollision(player->posx, player->posy, 32.0f, 64.0f, player->angle)) {
     // The ultimate fix: instantly revert to the safe position
     player->posx = oldX;
     player->posy = oldY;
@@ -222,7 +225,17 @@ void Game::update() {
 
   // --- 6. Lap Timing Logic ---
   playerBox_ = {player->posx, player->posy, 32.0f, 64.0f};
-  lapTimer.update(playerBox_, track_);
+  int lapStatus = lapTimer.update(playerBox_, track_);
+
+  if (lapStatus == 1) { // Lap started / restarted
+      ghostManager.startRecording();
+  } else if (lapStatus == 3) { // Finished with new best
+      ghostManager.saveBestLap(track_.name);
+  }
+
+  if (lapTimer.isStarted()) {
+      ghostManager.recordFrame(lapTimer.getCurrentLapTimeMs(), player->posx, player->posy, player->angle);
+  }
 
   // 7. Physics Constraints using InputManager
   if (input.up && player->vel < TOP_SPEED)
@@ -286,6 +299,11 @@ void Game::render() {
   // Render the collision mask if requested
   if (input.showMask && maskTexture) {
     SDL_RenderTexture(renderer, maskTexture, &camera, nullptr);
+  }
+
+  // Render the ghost before the player
+  if (player && lapTimer.isStarted()) {
+      ghostManager.render(renderer, player->getTexture(), camera, lapTimer.getCurrentLapTimeMs());
   }
 
   // Render the player texture

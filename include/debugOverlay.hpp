@@ -11,7 +11,7 @@ class DebugOverlay : public Overlay {
 public:
   DebugOverlay(const bool &active, const SDL_FRect &playerBox,
                const SDL_FRect &camera, LapTimer &lapTimer, const float &vel,
-               const float &angle, const std::string &version);
+               const double &angle, const std::string &version);
 
   void render(SDL_Renderer *renderer, TTF_Font *font) override;
   bool isActive() const override;
@@ -25,7 +25,7 @@ private:
   const SDL_FRect &camera_;
   LapTimer &lapTimer_;
   const float &vel_;
-  const float &angle_;
+  const double &angle_;
   std::string version_;
 };
 

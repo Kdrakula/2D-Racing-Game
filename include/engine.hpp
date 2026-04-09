@@ -6,6 +6,7 @@
 #include "gameConstants.hpp"
 #include "inputManager.hpp"
 #include "lapTimer.hpp"
+#include "ghostManager.hpp"
 #include "overlay.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
@@ -45,6 +46,7 @@ private:
   InputManager input;
   CollisionManager collision;
   LapTimer lapTimer;
+  GhostManager ghostManager;
 
   std::vector<std::unique_ptr<Overlay>> overlays;
   DebugOverlay *debugOverlay_ = nullptr; // non-owning, for telemetry

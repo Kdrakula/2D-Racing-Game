@@ -11,6 +11,8 @@ public:
   void update();
   void render();
 
+  SDL_Texture* getTexture() const { return objTexture; }
+
   float vel = 0.0f;
   float dir = 0.0f;
   float posx, posy;

@@ -80,7 +80,14 @@ void LapTimer::sendLapTime(const std::string &playerName, float time,
   }).detach();
 }
 
-void LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track) {
+Uint32 LapTimer::getCurrentLapTimeMs() const {
+    if (!isLapStarted) return 0;
+    return SDL_GetTicks() - startTime;
+}
+
+int LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track) {
+  int status = 0; // running
+
   // Initialize track checkpoints if needed (or just use them from track)
   if (currentTrackName != track.name) {
     currentTrackName = track.name;
@@ -98,15 +105,15 @@ void LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track) {
     isLapStarted = true;
     startTime = currentTime;
     std::cout << "\n[LAP] Started!" << std::endl;
+    status = 1;
   }
 
   if (!isLapStarted) {
-    return; // Don't process checkpoints or finish line if lap hasn't started
+    return status;
   }
 
   // Check checkpoints in order
   for (size_t i = 0; i < checkpoints.size(); ++i) {
-    // A checkpoint can only be hit if the previous one was hit (or it's the first one)
     bool previousHit = (i == 0) ? true : hitCheckpoints[i - 1];
     if (previousHit && !hitCheckpoints[i] &&
         checkAABB(playerBox, checkpoints[i])) {
@@ -116,7 +123,7 @@ void LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track) {
     }
   }
 
-  // Check finish line - only counts if ALL checkpoints were hit
+  // Check finish line
   bool allCheckpointsHit = true;
   for (bool hit : hitCheckpoints) {
     if (!hit) {
@@ -126,32 +133,34 @@ void LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track) {
   }
 
   if (allCheckpointsHit && checkAABB(playerBox, finishLine)) {
-    // Reset checkpoints
     for (size_t i = 0; i < hitCheckpoints.size(); ++i) {
       hitCheckpoints[i] = false;
     }
-    isLapStarted = false; // Lap finished, reset for next lap start
+    isLapStarted = false;
 
     lastLapTime = (currentTime - startTime) / 1000.0f;
-
     std::cout << "\n[LAP FINISHED] Time: " << lastLapTime << "s" << std::endl;
+
+    status = 2; // finished lap
 
     if (!bestLapSet || lastLapTime < bestLapTime) {
       bestLapTime = lastLapTime;
       bestLapSet = true;
       std::cout << ">>> NEW BEST LAP: " << bestLapTime << "s <<<" << std::endl;
+      
+      status = 3; // new best
 
       // Send to backend on a background thread
       std::string tName = track.name;
       float lTime = lastLapTime;
       std::thread([this, lTime, tName]() {
         sendLapTime("Player1", lTime, tName);
-
-        // Fetch leaderboard again as it has been updated
-        fetchLeaderboard(tName);
+        fetchLeaderboard(tName); // Refresh
       }).detach();
     }
   }
+
+  return status;
 }
 
 void LapTimer::renderResults(SDL_Renderer *renderer, float windowWidth,
@@ -273,8 +282,11 @@ void LapTimer::render(SDL_Renderer *renderer, const SDL_FRect &camera, bool debu
 }
 
 void LapTimer::renderTime(SDL_Renderer *renderer, float windowWidth) {
-  Uint64 currentLapTime = SDL_GetTicks() - startTime;
-  float timeInSeconds = currentLapTime / 1000.0f;
+  float timeInSeconds = 0.0f;
+  if (isLapStarted) {
+      Uint64 currentLapTime = SDL_GetTicks() - startTime;
+      timeInSeconds = currentLapTime / 1000.0f;
+  }
 
   std::stringstream ss;
   ss.precision(3);

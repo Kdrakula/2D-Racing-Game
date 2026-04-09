@@ -13,8 +13,12 @@ public:
   LapTimer();
 
   // Pass the player's bounding box and track info
-  void update(const SDL_FRect &playerBox, const TrackInfo &track);
+  // update the lap state based on player position.
+  // Returns: 0 = running, 1 = started/restarted lap, 2 = finished lap, 3 = finished (new best)
+  int update(const SDL_FRect &playerBox, const TrackInfo &track);
 
+  bool isStarted() const { return isLapStarted; }
+  Uint32 getCurrentLapTimeMs() const;
   // Draw the finish line and checkpoints when debug is true
   void render(SDL_Renderer *renderer, const SDL_FRect &camera, bool debug,
               const TrackInfo &track);

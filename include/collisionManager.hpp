@@ -15,7 +15,7 @@ public:
     void clean();
 
     // Collision checks
-    bool checkMaskCollision(float carX, float carY, float carWidth, float carHeight) const;
+    bool checkMaskCollision(float carX, float carY, float carWidth, float carHeight, double angle) const;
     bool checkAABB(const SDL_FRect& a, const SDL_FRect& b) const;
 
     // Accessors

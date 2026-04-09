@@ -2,6 +2,7 @@
 #include "errorLoger.hpp"
 #include <SDL3_image/SDL_image.h>
 #include <iostream>
+#include <cmath>
 
 CollisionManager::CollisionManager() {}
 
@@ -25,7 +26,7 @@ void CollisionManager::clean() {
     }
 }
 
-bool CollisionManager::checkMaskCollision(float carX, float carY, float carWidth, float carHeight) const {
+bool CollisionManager::checkMaskCollision(float carX, float carY, float carWidth, float carHeight, double angle) const {
     if (!collisionMask) return false;
 
     const SDL_PixelFormatDetails* fmt = SDL_GetPixelFormatDetails(collisionMask->format);
@@ -33,17 +34,36 @@ bool CollisionManager::checkMaskCollision(float carX, float carY, float carWidth
     
     int bpp = fmt->bytes_per_pixel;
 
-    // Check the 4 corners of the 32x64 car (with a 4px/8px offset)
-    int corners[4][2] = {
-        {static_cast<int>(carX + 4), static_cast<int>(carY + 8)},
-        {static_cast<int>(carX + carWidth - 4), static_cast<int>(carY + 8)},
-        {static_cast<int>(carX + 4), static_cast<int>(carY + carHeight - 8)},
-        {static_cast<int>(carX + carWidth - 4), static_cast<int>(carY + carHeight - 8)}
+    float cx = carX + carWidth / 2.0f;
+    float cy = carY + carHeight / 2.0f;
+
+    // The rendering angle is angle - M_PI/2 radians, meaning the graphic is rotated
+    // clockwise by this amount. We rotate the offset points by the same amount.
+    double theta_rad = angle - M_PI / 2.0;
+
+    float cos_theta = std::cos(theta_rad);
+    float sin_theta = std::sin(theta_rad);
+
+    float hw = carWidth / 2.0f;
+    float hh = carHeight / 2.0f;
+
+    // Offsets from the center of the car (with 4px horizontal, 8px vertical padding).
+    float offsets[4][2] = {
+        {-hw + 4.0f, -hh + 8.0f},
+        { hw - 4.0f, -hh + 8.0f},
+        {-hw + 4.0f,  hh - 8.0f},
+        { hw - 4.0f,  hh - 8.0f}
     };
 
     for (int i = 0; i < 4; i++) {
-        int px = corners[i][0];
-        int py = corners[i][1];
+        float u = offsets[i][0];
+        float v = offsets[i][1];
+
+        float rot_u = u * cos_theta - v * sin_theta;
+        float rot_v = u * sin_theta + v * cos_theta;
+
+        int px = static_cast<int>(cx + rot_u);
+        int py = static_cast<int>(cy + rot_v);
 
         // Bounds check
         if (px < 0 || px >= collisionMask->w || py < 0 || py >= collisionMask->h) {
