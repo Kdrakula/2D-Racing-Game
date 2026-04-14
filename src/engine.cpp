@@ -105,6 +105,9 @@ Game::Game(const char *title, int width, int height, const TrackInfo &track)
 
   // Load visual background from track
   bg = TextureManager::loadTexture(track.bgAsset.c_str());
+  if (bg) {
+    SDL_GetTextureSize(bg, &mapWidth, &mapHeight);
+  }
 
   // Load hitmap mask from track
   if (!collision.loadMask(track.maskAsset.c_str())) {
@@ -124,7 +127,7 @@ Game::Game(const char *title, int width, int height, const TrackInfo &track)
   ghostManager.loadGhost(track.name);
 
   // Initialise live player bounding box (kept in sync in update())
-  playerBox_ = {track.startX, track.startY, 32.0f, 64.0f};
+  playerBox_ = {track.startX, track.startY, player->width, player->height};
 
   // Build overlay stack (render order = push order)
   auto dbg = std::make_unique<DebugOverlay>(isDebugMode, playerBox_, camera,
@@ -170,6 +173,7 @@ void Game::update() {
   // This guarantees we never get stuck in a wall
   float oldX = player->posx;
   float oldY = player->posy;
+  double oldAngle = player->angle;
 
   // --- 2. Move Player ---
   player->update();
@@ -185,12 +189,12 @@ void Game::update() {
     player->posy = 0.0f;
     hitBoundary = true;
   }
-  if (player->posx + 32.0f > MAP_WIDTH) {
-    player->posx = MAP_WIDTH - 32.0f;
+  if (player->posx + player->width > mapWidth) {
+    player->posx = mapWidth - player->width;
     hitBoundary = true;
   }
-  if (player->posy + 64.0f > MAP_HEIGHT) {
-    player->posy = MAP_HEIGHT - 64.0f;
+  if (player->posy + player->height > mapHeight) {
+    player->posy = mapHeight - player->height;
     hitBoundary = true;
   }
 
@@ -199,32 +203,33 @@ void Game::update() {
   }
 
   // --- 4. Mask Collision Check ---
-  if (collision.checkMaskCollision(player->posx, player->posy, 32.0f, 64.0f, player->angle)) {
+  if (collision.checkMaskCollision(player->posx, player->posy, player->width, player->height, player->angle)) {
     // The ultimate fix: instantly revert to the safe position
     player->posx = oldX;
     player->posy = oldY;
+    player->angle = oldAngle;
 
     // Bounce the car back
     player->vel *= -0.5f;
   }
 
   // --- 5. Update Camera ---
-  // Center camera perfectly on the 32x64 car
-  camera.x = player->posx + 16.0f - (WINDOW_WIDTH / 2.0f);
-  camera.y = player->posy + 32.0f - (WINDOW_HEIGHT / 2.0f);
+  // Center camera perfectly on the car
+  camera.x = player->posx + (player->width / 2.0f) - (WINDOW_WIDTH / 2.0f);
+  camera.y = player->posy + (player->height / 2.0f) - (WINDOW_HEIGHT / 2.0f);
 
   // Clamp camera within map bounds
   if (camera.x < 0)
     camera.x = 0;
-  if (camera.x > MAP_WIDTH - camera.w)
-    camera.x = MAP_WIDTH - camera.w;
+  if (camera.x > mapWidth - camera.w)
+    camera.x = mapWidth - camera.w;
   if (camera.y < 0)
     camera.y = 0;
-  if (camera.y > MAP_HEIGHT - camera.h)
-    camera.y = MAP_HEIGHT - camera.h;
+  if (camera.y > mapHeight - camera.h)
+    camera.y = mapHeight - camera.h;
 
   // --- 6. Lap Timing Logic ---
-  playerBox_ = {player->posx, player->posy, 32.0f, 64.0f};
+  playerBox_ = {player->posx, player->posy, player->width, player->height};
   int lapStatus = lapTimer.update(playerBox_, track_);
 
   if (lapStatus == 1) { // Lap started / restarted

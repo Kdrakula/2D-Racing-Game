@@ -17,6 +17,8 @@ public:
   float dir = 0.0f;
   float posx, posy;
   double angle;
+  float width = 64.0f;
+  float height = 64.0f;
 
 private:
   double deg = 0.0;

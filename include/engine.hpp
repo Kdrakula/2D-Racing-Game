@@ -43,6 +43,9 @@ private:
 
   SDL_FRect playerBox_ = {0, 0, 32.0f, 64.0f};
 
+  float mapWidth = MAP_WIDTH;
+  float mapHeight = MAP_HEIGHT;
+
   InputManager input;
   CollisionManager collision;
   LapTimer lapTimer;

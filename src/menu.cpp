@@ -22,24 +22,29 @@ std::string Menu::resolveAsset(const std::string &relative) const {
 // Construction / Destruction
 // ---------------------------------------------------------------------------
 Menu::Menu() {
-  tracks_ = {
-      {"Test Void",
-       "assets/track-1.png",
-       "assets/maks-1.png",
-       393.0f, 364.0f, // starting posistion
-		0.,
-       {2360.0f, 1500.0f, 200.0f, 50.0f}, // finishLine
-       {{2360.0f, 1600.0f, 200.0f, 50.0f},
-        {4000.0f, 2000.0f, 200.0f, 50.0f}}}, // checkpoints
-      {"F1 Race Track",
-       "assets/track-2.png",
-       "assets/mask-2.png",
-		1950.0f,
-		1680.0f,
-		0.,
-       {1900.0f, 1600.0f, 20.0f, 200.0f}, // finishLine
-       {{1900.0f, 1280.0f, 20.0f, 200.0f},
-        {1900.0f, 930.0f, 20.0f, 200.0f}}}}; // checkpoints
+  tracks_ = {{"Test Void",
+              "assets/track-1.png",
+              "assets/maks-1.png",
+              393.0f,
+              364.0f, // starting posistion
+              0.,
+              {2360.0f, 1500.0f, 200.0f, 50.0f}, // finishLine
+              {{2360.0f, 1600.0f, 200.0f, 50.0f},
+               {4000.0f, 2000.0f, 200.0f, 50.0f}}}, // checkpoints
+             {"F1 Race Track",
+              "assets/track-2.png",
+              "assets/mask-2.png",
+              1950.0f,
+              1680.0f,
+              0.,
+              {1900.0f, 1600.0f, 20.0f, 200.0f}, // finishLine
+              {{1900.0f, 1280.0f, 20.0f, 200.0f},
+               {1900.0f, 930.0f, 20.0f, 200.0f}}}, // checkpoints
+              {"Neon City Night", "assets/track-neon.png", "assets/mask-neon.png", 100.0f, 100.0f, 0., {100,100,50,200}, {}},
+              {"Snowy Peaks", "assets/track-snow.png", "assets/mask-snow.png", 100.0f, 100.0f, 0., {100,100,50,200}, {}},
+              {"Retro Arcade", "assets/track-retro.png", "assets/mask-retro.png", 100.0f, 100.0f, 0., {100,100,50,200}, {}},
+              {"Forest Trail", "assets/track-forest.png", "assets/mask-forest.png", 100.0f, 100.0f, 0., {100,100,50,200}, {}}
+             };
 } // todo all tracks should contain their whole information in one file
 // todo add map generator
 
@@ -55,7 +60,7 @@ bool Menu::run() {
     render();
     SDL_Delay(16); // ~60 fps
     // todo correct FPS handling
-    //todo ping to server
+    // todo ping to server
   }
   clean();
   return confirmed_;
@@ -208,51 +213,83 @@ void Menu::render() {
              (WINDOW_WIDTH - 200.0f) / 2.0f, 110.0f);
 
   // --- Track cards ---
-  const float CARD_W = 420.0f;
-  const float CARD_H = 300.0f; // thumbnail (236px) + name bar (64px)
-  const float THUMB_H = 236.0f;
-  const float GAP = 30.0f;
+  const float CARD_W = 340.0f;
+  const float CARD_H = 240.0f; // thumbnail (190px) + name bar (50px)
+  const float THUMB_H = 190.0f;
+  const float GAP = 40.0f;
   const int n = static_cast<int>(tracks_.size());
-  float totalW = n * CARD_W + (n - 1) * GAP;
-  float startX = (WINDOW_WIDTH - totalW) / 2.0f;
+  
+  // Update continuous index for smooth scrolling
+  float diff = selectedIndex_ - continuousIndex_;
+  if (diff > n / 2.0f) diff -= n;
+  else if (diff < -n / 2.0f) diff += n;
+  continuousIndex_ += diff * 0.12f;
+  if (continuousIndex_ < 0) continuousIndex_ += n;
+  if (continuousIndex_ >= n) continuousIndex_ -= n;
+
+  float centerX = (WINDOW_WIDTH - CARD_W) / 2.0f;
   float cardY = 155.0f;
 
   for (int i = 0; i < n; ++i) {
-    float cx = startX + i * (CARD_W + GAP);
+    float itemDiff = i - continuousIndex_;
+    if (itemDiff > n / 2.0f) itemDiff -= n;
+    else if (itemDiff < -n / 2.0f) itemDiff += n;
+
+    float cx = centerX + itemDiff * (CARD_W + GAP);
+    
+    // Don't render cards that are completely off screen
+    if (cx + CARD_W < -100 || cx > WINDOW_WIDTH + 100) continue;
+
     bool selected = (i == selectedIndex_);
+
+    // Calculate opacity based on distance from center
+    float distance = std::abs(itemDiff);
+    Uint8 alpha = 255;
+    if (distance > 0.0f) {
+      float a = 255.0f - (distance * 130.0f);
+      if (a < 30.0f) a = 30.0f;
+      alpha = static_cast<Uint8>(a);
+    }
+
+    SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
 
     // Outer glow / border
     if (selected) {
-      SDL_SetRenderDrawColor(renderer_, 255, 210, 50, 255); // gold highlight
+      SDL_SetRenderDrawColor(renderer_, 255, 210, 50, alpha); // gold highlight
       SDL_FRect border = {cx - 3, cardY - 3, CARD_W + 6, CARD_H + 6};
       SDL_RenderFillRect(renderer_, &border);
     } else {
-      SDL_SetRenderDrawColor(renderer_, 60, 60, 80, 255);
+      SDL_SetRenderDrawColor(renderer_, 60, 60, 80, alpha);
       SDL_FRect border = {cx - 1, cardY - 1, CARD_W + 2, CARD_H + 2};
       SDL_RenderFillRect(renderer_, &border);
     }
 
     // Card background
-    SDL_SetRenderDrawColor(renderer_, 20, 20, 38, 255);
+    SDL_SetRenderDrawColor(renderer_, 20, 20, 38, alpha);
     SDL_FRect card = {cx, cardY, CARD_W, CARD_H};
     SDL_RenderFillRect(renderer_, &card);
 
     // Thumbnail
     SDL_FRect thumbDst = {cx, cardY, CARD_W, THUMB_H};
     if (thumbnails_[i]) {
+      SDL_SetTextureBlendMode(thumbnails_[i], SDL_BLENDMODE_BLEND);
+      SDL_SetTextureAlphaMod(thumbnails_[i], alpha);
       SDL_RenderTexture(renderer_, thumbnails_[i], nullptr, &thumbDst);
+      SDL_SetTextureAlphaMod(thumbnails_[i], 255); // restore
     } else {
       // Fallback: solid colour placeholder
-      SDL_SetRenderDrawColor(renderer_, 40, 80, 60, 255);
+      SDL_SetRenderDrawColor(renderer_, 40, 80, 60, alpha);
       SDL_RenderFillRect(renderer_, &thumbDst);
-      renderText(renderer_, bodyFont_, "[ No Preview ]", grey, cx + 140.0f,
+      SDL_Color fallbackColor = grey;
+      fallbackColor.a = alpha;
+      renderText(renderer_, bodyFont_, "[ No Preview ]", fallbackColor, cx + 100.0f,
                  cardY + THUMB_H / 2.0f - 11.0f);
     }
 
     // Name bar background
     SDL_FRect nameBar = {cx, cardY + THUMB_H, CARD_W, CARD_H - THUMB_H};
     SDL_SetRenderDrawColor(renderer_, selected ? 40 : 25, selected ? 35 : 22,
-                           selected ? 60 : 42, 255);
+                           selected ? 60 : 42, alpha);
     SDL_RenderFillRect(renderer_, &nameBar);
 
     // Track name
@@ -263,6 +300,8 @@ void Menu::render() {
       if (ns) {
         SDL_Texture *nt = SDL_CreateTextureFromSurface(renderer_, ns);
         if (nt) {
+          SDL_SetTextureBlendMode(nt, SDL_BLENDMODE_BLEND);
+          SDL_SetTextureAlphaMod(nt, alpha);
           float tw = 0, th = 0;
           SDL_GetTextureSize(nt, &tw, &th);
           SDL_FRect dst = {cx + (CARD_W - tw) / 2.0f,
@@ -276,10 +315,10 @@ void Menu::render() {
     }
   }
 
-  // --- Bottom instructions ---
-  renderText(renderer_, bodyFont_,
-             " <- ->  to select     ENTER to race     ESC to quit", grey, 0,
-             WINDOW_HEIGHT - 40.0f);
+  // // --- Bottom instructions ---
+  // renderText(renderer_, bodyFont_,
+  //            " <- ->  to select     ENTER to race     ESC to quit", grey, 0,
+  //            WINDOW_HEIGHT - 40.0f);
   // Centre the hint
   if (bodyFont_) {
     const std::string hint =

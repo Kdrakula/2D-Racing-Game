@@ -34,6 +34,7 @@ private:
   std::vector<SDL_Texture *> thumbnails_;
 
   int selectedIndex_ = 0;
+  float continuousIndex_ = 0.0f;
   bool confirmed_ = false;
   bool running_ = false;
 };

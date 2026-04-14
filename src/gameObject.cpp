@@ -12,8 +12,11 @@ GameObject::GameObject(const char *tex, float x, float y, double startAngle) {
   posx = x;
   posy = y;
   angle = startAngle;
-  srcRect = {0.0f, 0.0f, 32.0f, 64.0f};
-  dstRect = {0.0f, 0.0f, 32.0f * SCALE, 64.0f * SCALE};
+  if (objTexture) {
+      SDL_GetTextureSize(objTexture, &width, &height);
+  }
+  srcRect = {0.0f, 0.0f, width, height};
+  dstRect = {0.0f, 0.0f, width * SCALE, height * SCALE};
 }
 
 GameObject::~GameObject() {
