@@ -2,7 +2,7 @@
 Simple 2D top down racing game with timed runs and global leaderboard. 
 
 <p align="center">
-  <img src="assets/track-2.png" alt="Logo Projektu" width="50">
+  <img src="assets/track-2.png" alt="Logo Projektu" width="150">
 </p>
 
 ## Download
