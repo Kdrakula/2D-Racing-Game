@@ -40,11 +40,38 @@ Menu::Menu() {
               {1900.0f, 1600.0f, 20.0f, 200.0f}, // finishLine
               {{1900.0f, 1280.0f, 20.0f, 200.0f},
                {1900.0f, 930.0f, 20.0f, 200.0f}}}, // checkpoints
-              {"Neon City Night", "assets/track-neon.png", "assets/mask-neon.png", 100.0f, 100.0f, 0., {100,100,50,200}, {}},
-              {"Snowy Peaks", "assets/track-snow.png", "assets/mask-snow.png", 100.0f, 100.0f, 0., {100,100,50,200}, {}},
-              {"Retro Arcade", "assets/track-retro.png", "assets/mask-retro.png", 100.0f, 100.0f, 0., {100,100,50,200}, {}},
-              {"Forest Trail", "assets/track-forest.png", "assets/mask-forest.png", 100.0f, 100.0f, 0., {100,100,50,200}, {}}
-             };
+             {"Neon City Night",
+              "assets/track-neon.png",
+              "assets/mask-neon.png",
+              100.0f,
+              100.0f,
+              0.,
+              {100, 100, 50, 200},
+              {}},
+             {"Snowy Peaks",
+              "assets/track-snow.png",
+              "assets/mask-snow.png",
+              100.0f,
+              100.0f,
+              0.,
+              {100, 100, 50, 200},
+              {}},
+             {"Retro Arcade",
+              "assets/track-retro.png",
+              "assets/mask-retro.png",
+              100.0f,
+              100.0f,
+              0.,
+              {100, 100, 50, 200},
+              {}},
+             {"Forest Trail",
+              "assets/track-forest.png",
+              "assets/mask-forest.png",
+              100.0f,
+              100.0f,
+              0.,
+              {100, 100, 50, 200},
+              {}}};
 } // todo all tracks should contain their whole information in one file
 // todo add map generator
 
@@ -218,27 +245,34 @@ void Menu::render() {
   const float THUMB_H = 190.0f;
   const float GAP = 40.0f;
   const int n = static_cast<int>(tracks_.size());
-  
+
   // Update continuous index for smooth scrolling
   float diff = selectedIndex_ - continuousIndex_;
-  if (diff > n / 2.0f) diff -= n;
-  else if (diff < -n / 2.0f) diff += n;
+  if (diff > n / 2.0f)
+    diff -= n;
+  else if (diff < -n / 2.0f)
+    diff += n;
   continuousIndex_ += diff * 0.12f;
-  if (continuousIndex_ < 0) continuousIndex_ += n;
-  if (continuousIndex_ >= n) continuousIndex_ -= n;
+  if (continuousIndex_ < 0)
+    continuousIndex_ += n;
+  if (continuousIndex_ >= n)
+    continuousIndex_ -= n;
 
   float centerX = (WINDOW_WIDTH - CARD_W) / 2.0f;
   float cardY = 155.0f;
 
   for (int i = 0; i < n; ++i) {
     float itemDiff = i - continuousIndex_;
-    if (itemDiff > n / 2.0f) itemDiff -= n;
-    else if (itemDiff < -n / 2.0f) itemDiff += n;
+    if (itemDiff > n / 2.0f)
+      itemDiff -= n;
+    else if (itemDiff < -n / 2.0f)
+      itemDiff += n;
 
     float cx = centerX + itemDiff * (CARD_W + GAP);
-    
+
     // Don't render cards that are completely off screen
-    if (cx + CARD_W < -100 || cx > WINDOW_WIDTH + 100) continue;
+    if (cx + CARD_W < -100 || cx > WINDOW_WIDTH + 100)
+      continue;
 
     bool selected = (i == selectedIndex_);
 
@@ -247,7 +281,8 @@ void Menu::render() {
     Uint8 alpha = 255;
     if (distance > 0.0f) {
       float a = 255.0f - (distance * 130.0f);
-      if (a < 30.0f) a = 30.0f;
+      if (a < 30.0f)
+        a = 30.0f;
       alpha = static_cast<Uint8>(a);
     }
 
@@ -282,8 +317,8 @@ void Menu::render() {
       SDL_RenderFillRect(renderer_, &thumbDst);
       SDL_Color fallbackColor = grey;
       fallbackColor.a = alpha;
-      renderText(renderer_, bodyFont_, "[ No Preview ]", fallbackColor, cx + 100.0f,
-                 cardY + THUMB_H / 2.0f - 11.0f);
+      renderText(renderer_, bodyFont_, "[ No Preview ]", fallbackColor,
+                 cx + 100.0f, cardY + THUMB_H / 2.0f - 11.0f);
     }
 
     // Name bar background

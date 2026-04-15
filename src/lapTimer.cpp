@@ -24,7 +24,7 @@ bool LapTimer::checkAABB(const SDL_FRect &a, const SDL_FRect &b) const {
 void LapTimer::fetchLeaderboard(const std::string &trackName) {
   currentTrackName = trackName;
   std::thread([this, trackName]() {
-    httplib::Client cli("http://localhost:4000");
+    httplib::Client cli("http://100.71.178.10:4000");
     std::string url = "/api/laptimes?map_id=" + trackName;
 
     if (auto res = cli.Get(url.c_str())) {
@@ -60,7 +60,7 @@ void LapTimer::fetchLeaderboard(const std::string &trackName) {
 void LapTimer::sendLapTime(const std::string &playerName, float time,
                             const std::string &trackName) {
   std::thread([playerName, time, trackName]() {
-    httplib::Client cli("http://localhost:4000");
+    httplib::Client cli("http://100.71.178.10:4000");
     std::string url = "/api/laptime";
 
     nlohmann::json j;
