@@ -36,7 +36,7 @@ jobs:
     - name: Verify Dependencies (Dry Run)
       run: |
         # Próba uruchomienia zablokuje się na braku bibliotek ZANIM zacznie rysować grafikę
-        ./build/MyRacingGame.app/Contents/MacOS/MyRacingGame --help || true
+        ./build/MyRacingGame.app/Contents/MacOS/MyRacingGame --dry-run
         
         # Automatyczne sprawdzenie otool'em
         otool -L ./build/MyRacingGame.app/Contents/MacOS/MyRacingGame | grep -q "/opt/homebrew" && exit 1 || echo "Dependencies are clean!"
