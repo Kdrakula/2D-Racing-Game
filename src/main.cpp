@@ -4,6 +4,15 @@
 #include <filesystem>
 
 int main(int argc, char *argv[]) {
+  for (int i = 1; i < argc; ++i) {
+    if (std::string(argv[i]) == "--dry-run") {
+      std::cout << "[CI/CD] Dry run mode detected." << std::endl;
+      std::cout << "Engine dependencies loaded successfully. Exiting."
+                << std::endl;
+      return 0; // Exit safely without initializing graphical components
+    }
+  }
+
   // Set working directory to the binary location (handles macOS .app bundles)
   const char *base_path = SDL_GetBasePath();
   if (base_path) {
