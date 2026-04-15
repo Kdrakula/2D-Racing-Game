@@ -18,12 +18,31 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Homebrew Cache
+      uses: actions/cache@v4
+      with:
+        path: ~/Library/Caches/Homebrew
+        key: ${{ runner.os }}-brew-${{ hashFiles('.github/workflows/build-cpp.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-brew-
+
     - name: Install dependencies (brew)
       run: |
-        brew install cmake sdl3 sdl3_image sdl3_ttf nlohmann-json dylibbundler
+        HOMEBREW_NO_AUTO_UPDATE=1 brew install cmake sdl3 sdl3_image sdl3_ttf nlohmann-json dylibbundler ccache
+
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ runner.os }}-ccache
+
+    - name: FetchContent Cache
+      uses: actions/cache@v4
+      with:
+        path: _deps
+        key: ${{ runner.os }}-fetchcontent-${{ hashFiles('CMakeLists.txt') }}
 
     - name: Configure CMake
-      run: cmake -S . -B build
+      run: cmake -S . -B build -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DFETCHCONTENT_BASE_DIR=${{ github.workspace }}/_deps
 
     - name: Build
       run: cmake --build build --config Release
