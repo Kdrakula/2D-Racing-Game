@@ -20,7 +20,7 @@ jobs:
 
     - name: Install dependencies (brew)
       run: |
-        brew install cmake sdl3 sdl3_image sdl3_ttf nlohmann-json macdylibbundler
+        brew install cmake sdl3 sdl3_image sdl3_ttf nlohmann-json dylibbundler
 
     - name: Configure CMake
       run: cmake -S . -B build
