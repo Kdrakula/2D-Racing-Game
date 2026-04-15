@@ -2,6 +2,8 @@
 #include "menu.hpp"
 #include <SDL3/SDL.h>
 #include <filesystem>
+#include <iostream>
+#include <string>
 
 int main(int argc, char *argv[]) {
   for (int i = 1; i < argc; ++i) {
