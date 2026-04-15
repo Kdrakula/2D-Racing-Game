@@ -16,7 +16,7 @@ jobs:
     runs-on: macos-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Install dependencies (brew)
       run: |
@@ -31,7 +31,7 @@ jobs:
     - name: Bundle Dependencies
       run: |
         mkdir -p build/MyRacingGame.app/Contents/Frameworks
-        dylibbundler -f -b -x ./build/MyRacingGame.app/Contents/MacOS/MyRacingGame -d ./build/MyRacingGame.app/Contents/Frameworks/ -p @executable_path/../Frameworks/
+        dylibbundler -od -b -x ./build/MyRacingGame.app/Contents/MacOS/MyRacingGame -d ./build/MyRacingGame.app/Contents/Frameworks/ -p @executable_path/../Frameworks/
 
     - name: Verify Dependencies (Dry Run)
       run: |
@@ -54,7 +54,7 @@ jobs:
 
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: build/MyRacingGame-macOS.zip
       env:
