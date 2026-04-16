@@ -3,7 +3,7 @@
 - [x] Naprawienie "rozciągającej" się mapy przy krawędziach
 - [x] Naprawienie "wyprzedzającej" grafiki pojazdu i utykania w ścianie
 - [x] aplikacja za rzadko zczytuje czasy z serwera, niech wczytuje za kazdym przy wcisnienu klawisza TAB
-- [x] fizyka samochodu do poprawy
+- [ ] fizyka samochodu do poprawy
 - [x] niech w tabeli wyswietla sie 10 najlepszych czasow
 - [x] dane o duchu powinny zostac przeniesione z lokalnych na serwer i do bazy
 - [ ] tylko rekordy sa zapisywane w bazie danych, wszytskie wyiniki powinny byc zapisywane
@@ -16,3 +16,5 @@
 - [ ] u klienta(Milosz) nazwa sie nie zapisuje
 - [ ] dodac licznik fps
 - [ ] zamykajac aplikacje zamykamy obecne okno i cofamy sie do menu zamiast zabic ja calkiem
+- [ ] rozne zachowanie nawierzchni
+- [ ] particles & slady opon
