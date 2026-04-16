@@ -168,3 +168,36 @@ void GhostManager::render(SDL_Renderer* renderer, SDL_Texture* carTexture, const
         SDL_SetTextureBlendMode(carTexture, oldBlendMode);
     }
 }
+
+std::vector<uint8_t> GhostManager::getSerializedBestLap() const {
+    if (bestLapFrames_.empty()) return {};
+
+    size_t count = bestLapFrames_.size();
+    size_t dataSize = count * sizeof(GhostFrame);
+    size_t totalSize = sizeof(size_t) + dataSize;
+
+    std::vector<uint8_t> buffer(totalSize);
+    uint8_t* ptr = buffer.data();
+
+    std::memcpy(ptr, &count, sizeof(size_t));
+    std::memcpy(ptr + sizeof(size_t), bestLapFrames_.data(), dataSize);
+
+    return buffer;
+}
+
+void GhostManager::loadFromBuffer(const std::vector<uint8_t>& buffer) {
+    if (buffer.size() < sizeof(size_t)) return;
+
+    size_t count = 0;
+    std::memcpy(&count, buffer.data(), sizeof(size_t));
+
+    if (count > 0 && count < 1000000) {
+        size_t expectedSize = sizeof(size_t) + count * sizeof(GhostFrame);
+        if (buffer.size() >= expectedSize) {
+            bestLapFrames_.resize(count);
+            std::memcpy(bestLapFrames_.data(), buffer.data() + sizeof(size_t), count * sizeof(GhostFrame));
+            playbackIndex_ = 0;
+            std::cout << "[GHOST] Loaded ghost from buffer (" << count << " frames).\n";
+        }
+    }
+}

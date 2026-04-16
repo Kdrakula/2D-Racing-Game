@@ -22,56 +22,56 @@ std::string Menu::resolveAsset(const std::string &relative) const {
 // Construction / Destruction
 // ---------------------------------------------------------------------------
 Menu::Menu() {
-  tracks_ = {{"Test Void",
-              "assets/track-1.png",
-              "assets/maks-1.png",
-              393.0f,
-              364.0f, // starting posistion
-              0.,
-              {2360.0f, 1500.0f, 200.0f, 50.0f}, // finishLine
-              {{2360.0f, 1600.0f, 200.0f, 50.0f},
-               {4000.0f, 2000.0f, 200.0f, 50.0f}}}, // checkpoints
-             {"F1 Race Track",
-              "assets/track-2.png",
-              "assets/mask-2.png",
-              1950.0f,
-              1680.0f,
-              0.,
-              {1900.0f, 1600.0f, 20.0f, 200.0f}, // finishLine
-              {{1900.0f, 1280.0f, 20.0f, 200.0f},
-               {1900.0f, 930.0f, 20.0f, 200.0f}}}, // checkpoints
-             {"Neon City Night",
-              "assets/track-neon.png",
-              "assets/mask-neon.png",
-              100.0f,
-              100.0f,
-              0.,
-              {100, 100, 50, 200},
-              {}},
-             {"Snowy Peaks",
-              "assets/track-snow.png",
-              "assets/mask-snow.png",
-              100.0f,
-              100.0f,
-              0.,
-              {100, 100, 50, 200},
-              {}},
-             {"Retro Arcade",
-              "assets/track-retro.png",
-              "assets/mask-retro.png",
-              100.0f,
-              100.0f,
-              0.,
-              {100, 100, 50, 200},
-              {}},
-             {"Forest Trail",
-              "assets/track-forest.png",
-              "assets/mask-forest.png",
-              100.0f,
-              100.0f,
-              0.,
-              {100, 100, 50, 200},
-              {}}};
+  tracks_ = {
+      {"Test Void",
+       "assets/track-1.png",
+       "assets/maks-1.png",
+       393.0f,
+       364.0f,                            // starting posistion
+       0.,                                // rotation
+       {2360.0f, 1500.0f, 200.0f, 50.0f}, // finishLine
+       {{2360.0f, 1600.0f, 200.0f, 50.0f},
+        {4000.0f, 2000.0f, 200.0f, 50.0f}}}, // checkpoints
+      {"F1 Race Track",
+       "assets/track-2.png",
+       "assets/mask-2.png",
+       1950.0f,
+       1680.0f,
+       0.,
+       {1900.0f, 1600.0f, 20.0f, 200.0f},
+       {{1900.0f, 1280.0f, 20.0f, 200.0f}, {1900.0f, 930.0f, 20.0f, 200.0f}}},
+      {"Neon City Night",
+       "assets/track-neon.png",
+       "assets/mask-neon.png",
+       100.0f,
+       100.0f,
+       0.,
+       {100, 100, 50, 200},
+       {}},
+      {"Snowy Peaks",
+       "assets/track-snow.png",
+       "assets/mask-snow.png",
+       100.0f,
+       100.0f,
+       0.,
+       {100, 100, 50, 200},
+       {}},
+      {"Retro Arcade",
+       "assets/track-retro.png",
+       "assets/mask-retro.png",
+       100.0f,
+       100.0f,
+       0.,
+       {100, 100, 50, 200},
+       {}},
+      {"Forest Trail",
+       "assets/track-forest.png",
+       "assets/mask-forest.png",
+       100.0f,
+       100.0f,
+       0.,
+       {100, 100, 50, 200},
+       {}}};
 } // todo all tracks should contain their whole information in one file
 // todo add map generator
 
@@ -86,7 +86,7 @@ bool Menu::run() {
     handleEvents();
     render();
     SDL_Delay(16); // ~60 fps
-    // todo correct FPS handling
+
     // todo ping to server
   }
   clean();
@@ -139,7 +139,7 @@ void Menu::init() {
 // ---------------------------------------------------------------------------
 // handleEvents
 // ---------------------------------------------------------------------------
-void Menu::handleEvents() { // todo menu shouldn't be another window
+void Menu::handleEvents() {
   SDL_Event e;
   while (SDL_PollEvent(&e)) {
     if (e.type == SDL_EVENT_QUIT) {

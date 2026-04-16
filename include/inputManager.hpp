@@ -23,6 +23,8 @@ public:
   bool isTypingName = false;
   std::string playerName = "Player";
 
+  bool refreshLeaderboard = false;
+
   bool up = false;
   bool down = false;
   bool braking = false;

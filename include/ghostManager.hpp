@@ -38,6 +38,11 @@ public:
     // Render the ghost car
     void render(SDL_Renderer* renderer, SDL_Texture* carTexture, const SDL_FRect& camera, Uint32 currentLapTimeMs);
 
+    // Serialization for network sync
+    std::vector<uint8_t> getSerializedBestLap() const;
+    void loadFromBuffer(const std::vector<uint8_t>& buffer);
+    bool hasBestLap() const { return !bestLapFrames_.empty(); }
+
 private:
     std::vector<GhostFrame> currentLapFrames_;
     std::vector<GhostFrame> bestLapFrames_;

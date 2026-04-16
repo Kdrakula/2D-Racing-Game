@@ -1,0 +1,18 @@
+# To-do list
+- 
+- [x] Naprawienie "rozciągającej" się mapy przy krawędziach
+- [x] Naprawienie "wyprzedzającej" grafiki pojazdu i utykania w ścianie
+- [x] aplikacja za rzadko zczytuje czasy z serwera, niech wczytuje za kazdym przy wcisnienu klawisza TAB
+- [x] fizyka samochodu do poprawy
+- [x] niech w tabeli wyswietla sie 10 najlepszych czasow
+- [x] dane o duchu powinny zostac przeniesione z lokalnych na serwer i do bazy
+- [ ] tylko rekordy sa zapisywane w bazie danych, wszytskie wyiniki powinny byc zapisywane
+- [ ] z jakiegos powdu nie zawsze aplikacja wysyla zapytanie GET do serwera
+- [ ] duch sie resetuje po wlaczeniu mapy, a powinien myc numerem jeden z tabeli w bazie danych
+- [ ] bląd logiczny, kolizja dziala poprawnie, ale wizulanie obwodka zalega za pedzacym samochodem 
+- [ ] upewnic sie ze mapy roznych rozmiarow sa poprawnie obslugiwane
+- [ ] poprawic warunki brzegowe, nie ma potrezby sprawdzac 4 na raz
+- [ ] w trakcie wpisywania nicku, klawisze nie powinny wywolywac roznych funkcji (poza 'esc')
+- [ ] u klienta(Milosz) nazwa sie nie zapisuje
+- [ ] dodac licznik fps
+- [ ] zamykajac aplikacje zamykamy obecne okno i cofamy sie do menu zamiast zabic ja calkiem

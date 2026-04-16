@@ -8,6 +8,7 @@
 #include "lapTimer.hpp"
 #include "ghostManager.hpp"
 #include "overlay.hpp"
+#include "nicknameOverlay.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>

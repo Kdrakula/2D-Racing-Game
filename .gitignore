@@ -23,6 +23,7 @@ Makefile
 *.dll
 *.dSYM/
 compile_commands.json
+RUN_GUIDE.md
 
 # Tooling
 .vscode/

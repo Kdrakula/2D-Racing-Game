@@ -1,5 +1,6 @@
 #include "lapTimer.hpp"
 #include "engine.hpp" // For Game::font
+#include "ghostManager.hpp"
 #include <SDL3_ttf/SDL_ttf.h>
 #include <httplib.h>
 #include <iostream>
@@ -7,8 +8,70 @@
 #include <string>
 #include <thread>
 #include <nlohmann/json.hpp> // For JSON serialization
+#include <vector>
 
-LapTimer::LapTimer() {
+// --- Helper: Base64 Encoding/Decoding ---
+static const std::string base64_chars = 
+             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+             "abcdefghijklmnopqrstuvwxyz"
+             "0123456789+/";
+
+static std::string base64_encode(const std::vector<uint8_t>& data) {
+    std::string res;
+    int i = 0, j = 0;
+    uint8_t char_array_3[3], char_array_4[4];
+
+    for (uint8_t byte : data) {
+        char_array_3[i++] = byte;
+        if (i == 3) {
+            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+            char_array_4[3] = char_array_3[2] & 0x3f;
+            for(i = 0; (i <4) ; i++) res += base64_chars[char_array_4[i]];
+            i = 0;
+        }
+    }
+    if (i) {
+        for(j = i; j < 3; j++) char_array_3[j] = '\0';
+        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+        for (j = 0; (j < i + 1); j++) res += base64_chars[char_array_4[j]];
+        while((i++ < 3)) res += '=';
+    }
+    return res;
+}
+
+static std::vector<uint8_t> base64_decode(std::string const& encoded_string) {
+    int in_len = encoded_string.size();
+    int i = 0, j = 0, in_ = 0;
+    uint8_t char_array_4[4], char_array_3[3];
+    std::vector<uint8_t> ret;
+
+    while (in_len-- && ( encoded_string[in_] != '=') && (isalnum(encoded_string[in_]) || (encoded_string[in_] == '+') || (encoded_string[in_] == '/'))) {
+        char_array_4[i++] = encoded_string[in_]; in_++;
+        if (i == 4) {
+            for (i = 0; i <4; i++) char_array_4[i] = base64_chars.find(char_array_4[i]);
+            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+            for (i = 0; (i < 3); i++) ret.push_back(char_array_3[i]);
+            i = 0;
+        }
+    }
+    if (i) {
+        for (j = i; j <4; j++) char_array_4[j] = 0;
+        for (j = 0; j <4; j++) char_array_4[j] = base64_chars.find(char_array_4[j]);
+        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+        for (j = 0; (j < i - 1); j++) ret.push_back(char_array_3[j]);
+    }
+    return ret;
+}
+
+LapTimer::LapTimer(GhostManager* gm) : gm_(gm) {
   startTime = SDL_GetTicks();
   lastLapTime = 0.0f;
   bestLapTime = 0.0f;
@@ -33,12 +96,23 @@ void LapTimer::fetchLeaderboard(const std::string &trackName) {
 
         try {
           auto json = nlohmann::json::parse(res->body);
+          bool isFirst = true;
           for (const auto &item : json) {
             LapRecord record;
             record.player = item.value("player", "Unknown");
             record.time = item.value("time", 0.0f);
             record.date = item.value("date", "");
             newRecords.push_back(record);
+
+            // Sync world record ghost if available
+            if (isFirst && gm_ && item.contains("ghost") && !item["ghost"].is_null()) {
+                std::string b64 = item["ghost"];
+                if (!b64.empty()) {
+                    std::vector<uint8_t> ghostData = base64_decode(b64);
+                    gm_->loadFromBuffer(ghostData);
+                }
+            }
+            isFirst = false;
           }
         } catch (const nlohmann::json::parse_error &e) {
           std::cerr << "[NETWORK] JSON parse error: " << e.what() << std::endl;
@@ -58,8 +132,8 @@ void LapTimer::fetchLeaderboard(const std::string &trackName) {
 }
 
 void LapTimer::sendLapTime(const std::string &playerName, float time,
-                            const std::string &trackName) {
-  std::thread([playerName, time, trackName]() {
+                         const std::string &trackName) {
+  std::thread([this, playerName, time, trackName]() {
     httplib::Client cli("http://100.71.178.10:4000");
     std::string url = "/api/laptime";
 
@@ -67,6 +141,14 @@ void LapTimer::sendLapTime(const std::string &playerName, float time,
     j["player"] = playerName;
     j["map_id"] = trackName;
     j["time"] = time;
+
+    // Attach ghost data if available
+    if (gm_ && gm_->hasBestLap()) {
+        std::vector<uint8_t> ghostData = gm_->getSerializedBestLap();
+        if (!ghostData.empty()) {
+            j["ghost"] = base64_encode(ghostData);
+        }
+    }
 
     std::string payload = j.dump();
 
@@ -85,7 +167,7 @@ Uint32 LapTimer::getCurrentLapTimeMs() const {
     return SDL_GetTicks() - startTime;
 }
 
-int LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track) {
+int LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track, const std::string &playerName) {
   int status = 0; // running
 
   // Initialize track checkpoints if needed (or just use them from track)
@@ -153,8 +235,9 @@ int LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track) {
       // Send to backend on a background thread
       std::string tName = track.name;
       float lTime = lastLapTime;
-      std::thread([this, lTime, tName]() {
-        sendLapTime("Player1", lTime, tName);
+      std::string pName = playerName;
+      std::thread([this, lTime, tName, pName]() {
+        sendLapTime(pName, lTime, tName);
         fetchLeaderboard(tName); // Refresh
       }).detach();
     }

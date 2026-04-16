@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, LargeBinary
 from database import Base
 import datetime
 
@@ -10,3 +10,4 @@ class LapTime(Base):
     map_id = Column(String, index=True)
     time = Column(Float, index=True)
     date = Column(DateTime, default=datetime.datetime.utcnow)
+    ghost_data = Column(LargeBinary, nullable=True)

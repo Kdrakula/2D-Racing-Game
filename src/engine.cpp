@@ -65,7 +65,7 @@ void Game::checkForUpdates() {
 }
 
 Game::Game(const char *title, int width, int height, const TrackInfo &track)
-    : track_(track) {
+    : lapTimer(&ghostManager), track_(track) {
   if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
     logSDLError(std::cout, "Init");
     isRunning = false;
@@ -135,10 +135,13 @@ Game::Game(const char *title, int width, int height, const TrackInfo &track)
                                             player->angle, GAME_VERSION);
   debugOverlay_ = dbg.get();
   overlays.push_back(std::move(dbg));
-  overlays.push_back(
-      std::make_unique<NicknameOverlay>(input.isTypingName, input.playerName));
-  overlays.push_back(
-      std::make_unique<LeaderboardOverlay>(input.showResults, lapTimer));
+  
+  // Start with player name input active
+  input.isTypingName = true;
+  SDL_StartTextInput(SDL_GetKeyboardFocus());
+  
+  overlays.push_back(std::make_unique<NicknameOverlay>(input.isTypingName, input.playerName));
+  overlays.push_back(std::make_unique<LeaderboardOverlay>(input.showResults, lapTimer));
   overlays.push_back(std::make_unique<UpdaterOverlay>(updateAvailable));
 
   isRunning = true;
@@ -162,6 +165,9 @@ void Game::handleEvents() {
     input.showMask = !input.showMask;
     std::cout << "\n[MASK VISUALIZATION] " << (input.showMask ? "ON" : "OFF")
               << std::endl;
+  }
+  if (input.refreshLeaderboard) {
+    lapTimer.fetchLeaderboard(track_.name);
   }
 }
 
@@ -230,7 +236,7 @@ void Game::update() {
 
   // --- 6. Lap Timing Logic ---
   playerBox_ = {player->posx, player->posy, player->width, player->height};
-  int lapStatus = lapTimer.update(playerBox_, track_);
+  int lapStatus = lapTimer.update(playerBox_, track_, input.playerName);
 
   if (lapStatus == 1) { // Lap started / restarted
       ghostManager.startRecording();

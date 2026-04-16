@@ -8,14 +8,16 @@
 #include <vector>
 #include <mutex>
 
+class GhostManager;
+
 class LapTimer {
 public:
-  LapTimer();
+  LapTimer(GhostManager* gm = nullptr);
 
   // Pass the player's bounding box and track info
   // update the lap state based on player position.
   // Returns: 0 = running, 1 = started/restarted lap, 2 = finished lap, 3 = finished (new best)
-  int update(const SDL_FRect &playerBox, const TrackInfo &track);
+  int update(const SDL_FRect &playerBox, const TrackInfo &track, const std::string &playerName);
 
   bool isStarted() const { return isLapStarted; }
   Uint32 getCurrentLapTimeMs() const;
@@ -29,6 +31,9 @@ public:
   // Draw leaderboard overlay when user holds TAB
   void renderResults(SDL_Renderer *renderer, float windowWidth,
                      float windowHeight);
+
+  // Sync world record ghost if available
+  void fetchLeaderboard(const std::string &trackName);
 
 private:
   SDL_FRect finishLine;
@@ -54,10 +59,10 @@ private:
   // AABB intersection check
   bool checkAABB(const SDL_FRect &a, const SDL_FRect &b) const;
 
-  // Async leaderboard fetching
-  void fetchLeaderboard(const std::string &trackName);
   void sendLapTime(const std::string &playerName, float time,
                    const std::string &trackName);
+
+  GhostManager* gm_ = nullptr;
 };
 
 #endif

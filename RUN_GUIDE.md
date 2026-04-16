@@ -48,3 +48,10 @@ Jeżeli chcesz zwolnić zasoby na komputerze i wstrzymać serwery, użyj polecen
 docker-compose down
 ```
 *(Baza zapamięta swoje stany na dysku, czasy okrążeń **nie znikną**!).*
+
+
+## BeagleBoard
+```bash
+cd leaderboard-server/
+uvicorn main:app --host 0.0.0.0 --port 4000
+```
