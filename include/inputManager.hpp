@@ -14,6 +14,7 @@ public:
 
   // Public state variables
   bool isQuitRequested = false;
+  bool isHardQuitRequested = false;
   bool isDebugToggled = false;
   bool showMaskToggled = false;
   bool showResults = false;

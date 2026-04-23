@@ -49,6 +49,9 @@ int main(int argc, char *argv[]) {
     }
 
     game.clean();
+    if (game.hardQuitRequested()) {
+      break;
+    }
   }
   return 0;
 }

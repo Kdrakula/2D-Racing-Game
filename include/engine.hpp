@@ -28,6 +28,7 @@ public:
   void clean();
 
   bool running() const { return isRunning; }
+  bool hardQuitRequested() const { return input.isHardQuitRequested; }
 
   static SDL_FRect camera;
   static SDL_Renderer *renderer;

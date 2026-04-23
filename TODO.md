@@ -12,9 +12,9 @@
 - [ ] bląd logiczny, kolizja dziala poprawnie, ale wizulanie obwodka zalega za pedzacym samochodem 
 - [ ] upewnic sie ze mapy roznych rozmiarow sa poprawnie obslugiwane
 - [ ] poprawic warunki brzegowe, nie ma potrezby sprawdzac 4 na raz
-- [ ] w trakcie wpisywania nicku, klawisze nie powinny wywolywac roznych funkcji (poza 'esc')
+- [x] w trakcie wpisywania nicku, klawisze nie powinny wywolywac roznych funkcji (poza 'esc')
 - [ ] u klienta(Milosz) nazwa sie nie zapisuje
 - [ ] dodac licznik fps
-- [ ] zamykajac aplikacje zamykamy obecne okno i cofamy sie do menu zamiast zabic ja calkiem
+- [x] zamykajac aplikacje zamykamy obecne okno i cofamy sie do menu zamiast zabic ja calkiem
 - [ ] rozne zachowanie nawierzchni
 - [ ] particles & slady opon
