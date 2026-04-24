@@ -68,6 +68,7 @@ void GhostManager::loadGhost(const std::string& trackName) {
         if (count > 0 && count < 1000000) { // arbitrary limit, prevents bad reads
             bestLapFrames_.resize(count);
             in.read(reinterpret_cast<char*>(bestLapFrames_.data()), count * sizeof(GhostFrame));
+            ghostPlayerName_ = "Local Ghost";
             std::cout << "[GHOST] Loaded ghost from " << path << " (" << count << " frames).\n";
         }
         in.close();

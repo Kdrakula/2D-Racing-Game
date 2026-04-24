@@ -9,67 +9,10 @@
 #include <thread>
 #include <nlohmann/json.hpp> // For JSON serialization
 #include <vector>
+#include <cstdlib>
 
-// --- Helper: Base64 Encoding/Decoding ---
-static const std::string base64_chars = 
-             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-             "abcdefghijklmnopqrstuvwxyz"
-             "0123456789+/";
-
-static std::string base64_encode(const std::vector<uint8_t>& data) {
-    std::string res;
-    int i = 0, j = 0;
-    uint8_t char_array_3[3], char_array_4[4];
-
-    for (uint8_t byte : data) {
-        char_array_3[i++] = byte;
-        if (i == 3) {
-            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-            char_array_4[3] = char_array_3[2] & 0x3f;
-            for(i = 0; (i <4) ; i++) res += base64_chars[char_array_4[i]];
-            i = 0;
-        }
-    }
-    if (i) {
-        for(j = i; j < 3; j++) char_array_3[j] = '\0';
-        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
-        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
-        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
-        for (j = 0; (j < i + 1); j++) res += base64_chars[char_array_4[j]];
-        while((i++ < 3)) res += '=';
-    }
-    return res;
-}
-
-static std::vector<uint8_t> base64_decode(std::string const& encoded_string) {
-    int in_len = encoded_string.size();
-    int i = 0, j = 0, in_ = 0;
-    uint8_t char_array_4[4], char_array_3[3];
-    std::vector<uint8_t> ret;
-
-    while (in_len-- && ( encoded_string[in_] != '=') && (isalnum(encoded_string[in_]) || (encoded_string[in_] == '+') || (encoded_string[in_] == '/'))) {
-        char_array_4[i++] = encoded_string[in_]; in_++;
-        if (i == 4) {
-            for (i = 0; i <4; i++) char_array_4[i] = base64_chars.find(char_array_4[i]);
-            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
-            for (i = 0; (i < 3); i++) ret.push_back(char_array_3[i]);
-            i = 0;
-        }
-    }
-    if (i) {
-        for (j = i; j <4; j++) char_array_4[j] = 0;
-        for (j = 0; j <4; j++) char_array_4[j] = base64_chars.find(char_array_4[j]);
-        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
-        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
-        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
-        for (j = 0; (j < i - 1); j++) ret.push_back(char_array_3[j]);
-    }
-    return ret;
-}
+#include "networkManager.hpp"
+#include "utils.hpp"
 
 LapTimer::LapTimer(GhostManager* gm) : gm_(gm) {
   startTime = SDL_GetTicks();
@@ -87,8 +30,14 @@ bool LapTimer::checkAABB(const SDL_FRect &a, const SDL_FRect &b) const {
 void LapTimer::fetchLeaderboard(const std::string &trackName) {
   currentTrackName = trackName;
   std::thread([this, trackName]() {
-    httplib::Client cli("http://100.71.178.10:4000");
-    std::string url = "/api/laptimes?map_id=" + trackName;
+    if (!NetworkManager::getInstance().isOnline()) {
+        std::lock_guard<std::mutex> lock(recordsMutex);
+        topRecords.clear();
+        return;
+    }
+
+    httplib::Client cli(NetworkManager::getInstance().getActiveUrl());
+    std::string url = "/api/laptimes?map_id=" + urlEncode(trackName);
 
     if (auto res = cli.Get(url.c_str())) {
       if (res->status == 200) {
@@ -110,6 +59,7 @@ void LapTimer::fetchLeaderboard(const std::string &trackName) {
                 if (!b64.empty()) {
                     std::vector<uint8_t> ghostData = base64_decode(b64);
                     gm_->loadFromBuffer(ghostData);
+                    gm_->setGhostPlayerName(record.player);
                 }
             }
             isFirst = false;
@@ -132,9 +82,14 @@ void LapTimer::fetchLeaderboard(const std::string &trackName) {
 }
 
 void LapTimer::sendLapTime(const std::string &playerName, float time,
-                         const std::string &trackName) {
-  std::thread([this, playerName, time, trackName]() {
-    httplib::Client cli("http://100.71.178.10:4000");
+                         const std::string &trackName, std::vector<uint8_t> ghostData) {
+  std::thread([this, playerName, time, trackName, ghostData]() {
+    if (!NetworkManager::getInstance().isOnline()) {
+        NetworkManager::getInstance().queueOfflineLap(playerName, trackName, time, ghostData);
+        return;
+    }
+
+    httplib::Client cli(NetworkManager::getInstance().getActiveUrl());
     std::string url = "/api/laptime";
 
     nlohmann::json j;
@@ -142,22 +97,25 @@ void LapTimer::sendLapTime(const std::string &playerName, float time,
     j["map_id"] = trackName;
     j["time"] = time;
 
-    // Attach ghost data if available
-    if (gm_ && gm_->hasBestLap()) {
-        std::vector<uint8_t> ghostData = gm_->getSerializedBestLap();
-        if (!ghostData.empty()) {
-            j["ghost"] = base64_encode(ghostData);
-        }
+    if (!ghostData.empty()) {
+        j["ghost"] = base64_encode(ghostData);
     }
 
     std::string payload = j.dump();
 
     if (auto res = cli.Post(url.c_str(), payload, "application/json")) {
-      std::cout << "\n[NETWORK] Successfully sent lap time to server! Status: "
-                << res->status << std::endl;
+      if (res->status == 200) {
+        std::cout << "\n[NETWORK] Successfully sent lap time to server! Status: "
+                  << res->status << std::endl;
+        this->fetchLeaderboard(trackName); // Refresh after upload
+      } else {
+        std::cerr << "\n[NETWORK] Server returned error status: " << res->status << std::endl;
+        NetworkManager::getInstance().queueOfflineLap(playerName, trackName, time, ghostData);
+      }
     } else {
       std::cerr << "\n[NETWORK] Failed to send lap time to server. Error: "
                 << httplib::to_string(res.error()) << std::endl;
+      NetworkManager::getInstance().queueOfflineLap(playerName, trackName, time, ghostData);
     }
   }).detach();
 }
@@ -225,22 +183,25 @@ int LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track, const s
 
     status = 2; // finished lap
 
-    if (!bestLapSet || lastLapTime < bestLapTime) {
+    bool isNewRecord = (!bestLapSet || lastLapTime < bestLapTime);
+    if (isNewRecord) {
       bestLapTime = lastLapTime;
       bestLapSet = true;
       std::cout << ">>> NEW BEST LAP: " << bestLapTime << "s <<<" << std::endl;
       
       status = 3; // new best
 
-      // Send to backend on a background thread
-      std::string tName = track.name;
-      float lTime = lastLapTime;
-      std::string pName = playerName;
-      std::thread([this, lTime, tName, pName]() {
-        sendLapTime(pName, lTime, tName);
-        fetchLeaderboard(tName); // Refresh
-      }).detach();
+      if (gm_) {
+          gm_->saveBestLap(track.name);
+      }
     }
+
+    std::vector<uint8_t> ghostPayload;
+    if (isNewRecord && gm_) {
+        ghostPayload = gm_->getSerializedBestLap();
+    }
+    
+    sendLapTime(playerName, lastLapTime, track.name, ghostPayload);
   }
 
   return status;
@@ -326,6 +287,25 @@ void LapTimer::renderResults(SDL_Renderer *renderer, float windowWidth,
           SDL_DestroySurface(rowSurface);
         }
       }
+    }
+  }
+
+  // Draw Network Status
+  if (Game::font) {
+    std::string netStatus = "Network: " + NetworkManager::getInstance().getStatusString();
+    SDL_Color netColor = NetworkManager::getInstance().isOnline() ? SDL_Color{0, 255, 0, 255} : SDL_Color{255, 0, 0, 255};
+    SDL_Surface *netSurface = TTF_RenderText_Blended(Game::font, netStatus.c_str(), 0, netColor);
+    if (netSurface) {
+      SDL_Texture *netTexture = SDL_CreateTextureFromSurface(renderer, netSurface);
+      if (netTexture) {
+        SDL_FRect netRect = {bgRect.x + 20.0f,
+                             bgRect.y + boxHeight - netSurface->h - 20.0f, 
+                             (float)netSurface->w,
+                             (float)netSurface->h};
+        SDL_RenderTexture(renderer, netTexture, nullptr, &netRect);
+        SDL_DestroyTexture(netTexture);
+      }
+      SDL_DestroySurface(netSurface);
     }
   }
 

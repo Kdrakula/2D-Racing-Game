@@ -1,20 +1,29 @@
 # To-do list
-- 
-- [x] Naprawienie "rozciągającej" się mapy przy krawędziach
-- [x] Naprawienie "wyprzedzającej" grafiki pojazdu i utykania w ścianie
+
+### 🔴 1. Błędy Krytyczne i Sieciowe (Najwyższy priorytet)
 - [x] aplikacja za rzadko zczytuje czasy z serwera, niech wczytuje za kazdym przy wcisnienu klawisza TAB
-- [ ] fizyka samochodu do poprawy
-- [x] niech w tabeli wyswietla sie 10 najlepszych czasow
+- [x] z jakiegos powdu nie zawsze aplikacja wysyla zapytanie GET do serwera
+- [x] duch sie resetuje po wlaczeniu mapy, a powinien myc numerem jeden z tabeli w bazie danych
+- [x] u klienta(Milosz) nazwa sie nie zapisuje
+- [x] tylko rekordy sa zapisywane w bazie danych, wszytskie wyiniki powinny byc zapisywane
+
+### 🟡 2. Optymalizacja, Czystość Kodu, QoL (Wysoki priorytet)
+- [x] Naprawienie "rozciągającej" się mapy przy krawędziach
+- [x] w trakcie wpisywania nicku, klawisze nie powinny wywolywac roznych funkcji (poza 'esc')
+- [x] zamykajac aplikacje zamykamy obecne okno i cofamy sie do menu zamiast zabic ja calkiem
 - [x] dane o duchu powinny zostac przeniesione z lokalnych na serwer i do bazy
-- [ ] tylko rekordy sa zapisywane w bazie danych, wszytskie wyiniki powinny byc zapisywane
-- [ ] z jakiegos powdu nie zawsze aplikacja wysyla zapytanie GET do serwera
-- [ ] duch sie resetuje po wlaczeniu mapy, a powinien myc numerem jeden z tabeli w bazie danych
-- [ ] bląd logiczny, kolizja dziala poprawnie, ale wizulanie obwodka zalega za pedzacym samochodem 
+- [x] niech w tabeli wyswietla sie 10 najlepszych czasow
 - [ ] upewnic sie ze mapy roznych rozmiarow sa poprawnie obslugiwane
 - [ ] poprawic warunki brzegowe, nie ma potrezby sprawdzac 4 na raz
-- [x] w trakcie wpisywania nicku, klawisze nie powinny wywolywac roznych funkcji (poza 'esc')
-- [ ] u klienta(Milosz) nazwa sie nie zapisuje
+- [ ] bląd logiczny, kolizja dziala poprawnie, ale wizulanie obwodka zalega za pedzacym samochodem 
 - [ ] dodac licznik fps
-- [x] zamykajac aplikacje zamykamy obecne okno i cofamy sie do menu zamiast zabic ja calkiem
+- [ ] unique nicks
+- [x] names above ghost and players (toggable)
+
+### 🟢 3. Gameplay i Fizyka (Średni priorytet)
+- [x] Naprawienie "wyprzedzającej" grafiki pojazdu i utykania w ścianie
+- [ ] fizyka samochodu do poprawy
 - [ ] rozne zachowanie nawierzchni
+
+### 🔵 4. Aspekty Wizualne (Niski priorytet)
 - [ ] particles & slady opon

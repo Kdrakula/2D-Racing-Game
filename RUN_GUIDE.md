@@ -42,6 +42,12 @@ Kiedy strona "Backendowa" Dockera już działa i nasłuchuje na porcie `4000`, c
      ./build/MyRacingGame
      ```
 
+   - **Zmiana adresu serwera (np. na BeagleBone):**  
+     Aplikacja domyślnie próbuje się połączyć z `http://100.71.178.10:4000`. Jeśli serwer (lub baza OrbStack) działa pod innym adresem, po prostu podaj go jako zmienną środowiskową `API_URL` przed uruchomieniem:
+     ```bash
+     API_URL="http://beaglebone.local:4000" ./build/MyRacingGame
+     ```
+
 ## Zakończenie pracy
 Jeżeli chcesz zwolnić zasoby na komputerze i wstrzymać serwery, użyj polecenia:
 ```bash

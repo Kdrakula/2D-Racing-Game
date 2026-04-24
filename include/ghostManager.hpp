@@ -43,9 +43,13 @@ public:
     void loadFromBuffer(const std::vector<uint8_t>& buffer);
     bool hasBestLap() const { return !bestLapFrames_.empty(); }
 
+    void setGhostPlayerName(const std::string& name) { ghostPlayerName_ = name; }
+    std::string getGhostPlayerName() const { return ghostPlayerName_; }
+
 private:
     std::vector<GhostFrame> currentLapFrames_;
     std::vector<GhostFrame> bestLapFrames_;
+    std::string ghostPlayerName_ = "Unknown";
 
     // To optimize lookup, track the last accessed index in the playback
     size_t playbackIndex_ = 0;

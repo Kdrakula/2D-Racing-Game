@@ -60,7 +60,7 @@ private:
   bool checkAABB(const SDL_FRect &a, const SDL_FRect &b) const;
 
   void sendLapTime(const std::string &playerName, float time,
-                   const std::string &trackName);
+                   const std::string &trackName, std::vector<uint8_t> ghostData);
 
   GhostManager* gm_ = nullptr;
 };

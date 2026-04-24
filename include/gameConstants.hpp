@@ -1,14 +1,21 @@
 #ifndef GAMECONSTANTS_HPP
 #define GAMECONSTANTS_HPP
 
+#include <SDL3/SDL.h>
 #include <string>
 #include <vector>
-#include <SDL3/SDL.h>
 
 constexpr float MAP_WIDTH = 7680.0f;
 constexpr float MAP_HEIGHT = 4320.0f;
 constexpr float WINDOW_WIDTH = 1280.0f;
 constexpr float WINDOW_HEIGHT = 720.0f;
+
+// Network constants
+const std::vector<std::string> API_URLS = {
+    "http://100.71.178.10:4000",   // Tailscale
+    "http://beaglebone.local:4000", // Local BeagleBone
+    "http://127.0.0.1:4000"         // Local Orbstack
+};
 
 // Physics constants
 constexpr float TOP_SPEED = 5.0f;

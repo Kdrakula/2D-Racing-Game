@@ -1,6 +1,15 @@
 #include "inputManager.hpp"
+#include <fstream>
+#include <SDL3/SDL.h>
 
-InputManager::InputManager() {}
+InputManager::InputManager() {
+    std::string path = std::string(SDL_GetBasePath()) + "assets/player_name.txt";
+    std::ifstream in(path);
+    if (in.is_open()) {
+        std::getline(in, playerName);
+        in.close();
+    }
+}
 
 InputManager::~InputManager() {}
 
@@ -29,6 +38,14 @@ void InputManager::update() {
         case SDLK_RETURN:
           isTypingName = false;
           SDL_StopTextInput(SDL_GetKeyboardFocus());
+          {
+              std::string path = std::string(SDL_GetBasePath()) + "assets/player_name.txt";
+              std::ofstream out(path);
+              if (out.is_open()) {
+                  out << playerName;
+                  out.close();
+              }
+          }
           break;
         default:
           break;
@@ -37,6 +54,9 @@ void InputManager::update() {
         switch (event.key.key) {
         case SDLK_ESCAPE:
           isQuitRequested = true;
+          break;
+        case SDLK_V:
+          showNames = !showNames;
           break;
         case SDLK_L:
           isDebugToggled = true;

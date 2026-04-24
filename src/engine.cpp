@@ -12,7 +12,11 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
+#include "networkManager.hpp"
 
+#ifndef GAME_VERSION
+#define GAME_VERSION "unknown"
+#endif
 
 SDL_Renderer *Game::renderer = nullptr;
 SDL_FRect Game::camera = {0.0f, 0.0f, WINDOW_WIDTH, WINDOW_HEIGHT};
@@ -145,6 +149,7 @@ Game::Game(const char *title, int width, int height, const TrackInfo &track)
   overlays.push_back(std::make_unique<UpdaterOverlay>(updateAvailable));
 
   isRunning = true;
+  NetworkManager::getInstance().startPolling();
   checkForUpdates();
 }
 
@@ -240,8 +245,6 @@ void Game::update() {
 
   if (lapStatus == 1) { // Lap started / restarted
       ghostManager.startRecording();
-  } else if (lapStatus == 3) { // Finished with new best
-      ghostManager.saveBestLap(track_.name);
   }
 
   if (lapTimer.isStarted()) {
@@ -313,12 +316,41 @@ void Game::render() {
   }
 
   // Render the ghost before the player
+  float gx = 0, gy = 0;
+  double ga = 0;
+  bool isGhostActive = false;
+
   if (player && lapTimer.isStarted()) {
+      isGhostActive = ghostManager.getGhostState(lapTimer.getCurrentLapTimeMs(), gx, gy, ga);
       ghostManager.render(renderer, player->getTexture(), camera, lapTimer.getCurrentLapTimeMs());
   }
 
   // Render the player texture
   player->render();
+
+  // Render names above cars
+  if (input.showNames && Game::font) {
+      auto drawName = [&](const std::string& name, float x, float y, SDL_Color color) {
+          SDL_Surface* surf = TTF_RenderText_Blended(Game::font, name.c_str(), 0, color);
+          if (surf) {
+              SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+              if (tex) {
+                  SDL_FRect dst = { x - camera.x + (32.0f - surf->w) / 2.0f, y - camera.y - surf->h - 5.0f, (float)surf->w, (float)surf->h };
+                  SDL_RenderTexture(renderer, tex, nullptr, &dst);
+                  SDL_DestroyTexture(tex);
+              }
+              SDL_DestroySurface(surf);
+          }
+      };
+
+      if (isGhostActive) {
+          SDL_Color ghostColor = {150, 150, 255, 255};
+          drawName(ghostManager.getGhostPlayerName(), gx, gy, ghostColor);
+      }
+      
+      SDL_Color playerColor = {255, 255, 255, 255};
+      drawName(input.playerName, player->posx, player->posy, playerColor);
+  }
 
   lapTimer.renderTime(renderer, WINDOW_WIDTH);
   lapTimer.render(renderer, camera, isDebugMode, track_);
@@ -352,5 +384,6 @@ void Game::clean() {
   SDL_DestroyWindow(window);
   TTF_Quit();
   SDL_Quit();
+  NetworkManager::getInstance().stopPolling();
   std::cout << "Engine cleaned successfully." << std::endl;
 }
