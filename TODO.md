@@ -24,7 +24,9 @@
 - [x] Naprawienie "wyprzedzającej" grafiki pojazdu i utykania w ścianie
 - [ ] fizyka samochodu do poprawy
 - [ ] rozne zachowanie nawierzchni
+- [ ] umozliwienie hostowania serwera przez uzytkownika
 
 ### 🔵 4. Aspekty Wizualne (Niski priorytet)
 - [ ] particles & slady opon
 - [ ] nowe mapy i pojazdy
+- [ ] dzwieki i muzyka
