@@ -62,11 +62,17 @@ void NetworkManager::checkConnection() {
 
         if (auto res = cli.Get("/api/laptimes")) {
             if (res->status == 200) {
-                std::lock_guard<std::mutex> lock(mtx_);
-                activeUrl_ = url;
-                if (!isOnline_) {
-                    isOnline_ = true;
-                    std::cout << "\n[NETWORK] Back online! Active server: " << activeUrl_ << std::endl;
+                bool justCameOnline = false;
+                {
+                    std::lock_guard<std::mutex> lock(mtx_);
+                    activeUrl_ = url;
+                    if (!isOnline_) {
+                        isOnline_ = true;
+                        justCameOnline = true;
+                        std::cout << "\n[NETWORK] Back online! Active server: " << activeUrl_ << std::endl;
+                    }
+                }
+                if (justCameOnline) {
                     syncOfflineQueue();
                 }
                 found = true;
@@ -104,27 +110,30 @@ std::string NetworkManager::getStatusString() {
     return "Offline";
 }
 
-void NetworkManager::queueOfflineLap(const std::string& player, const std::string& map_id, float time, const std::vector<uint8_t>& ghostData) {
+void NetworkManager::queueOfflineLap(const std::string& player, const std::string& player_id, const std::string& map_id, float time, const std::vector<uint8_t>& ghostData) {
     std::lock_guard<std::mutex> lock(mtx_);
-    offlineQueue_.push_back({player, map_id, time, ghostData});
+    offlineQueue_.push_back({player, player_id, map_id, time, ghostData});
     saveOfflineQueue();
     std::cout << "[NETWORK] Saved lap offline for " << player << " (" << time << "s)" << std::endl;
 }
 
 void NetworkManager::syncOfflineQueue() {
-    if (offlineQueue_.empty()) return;
-    
     std::vector<OfflineLap> pendingLaps;
+    std::string urlToUse;
     {
+        std::lock_guard<std::mutex> lock(mtx_);
+        if (offlineQueue_.empty()) return;
         pendingLaps = offlineQueue_;
+        urlToUse = activeUrl_;
     }
 
-    httplib::Client cli(activeUrl_);
+    httplib::Client cli(urlToUse);
     std::vector<OfflineLap> failedLaps;
 
     for (const auto& lap : pendingLaps) {
         nlohmann::json j;
         j["player"] = lap.player;
+        j["player_id"] = lap.player_id;
         j["map_id"] = lap.map_id;
         j["time"] = lap.time;
         if (!lap.ghostData.empty()) {
@@ -140,11 +149,12 @@ void NetworkManager::syncOfflineQueue() {
             }
         } else {
             failedLaps.push_back(lap);
-            break; 
+            break;
         }
     }
 
     {
+        std::lock_guard<std::mutex> lock(mtx_);
         offlineQueue_ = failedLaps;
         saveOfflineQueue();
     }
@@ -160,6 +170,7 @@ void NetworkManager::loadOfflineQueue() {
         for (const auto& item : j) {
             OfflineLap lap;
             lap.player = item.value("player", "");
+            lap.player_id = item.value("player_id", "");
             lap.map_id = item.value("map_id", "");
             lap.time = item.value("time", 0.0f);
             if (item.contains("ghost") && !item["ghost"].is_null()) {
@@ -181,6 +192,7 @@ void NetworkManager::saveOfflineQueue() {
     for (const auto& lap : offlineQueue_) {
         nlohmann::json item;
         item["player"] = lap.player;
+        item["player_id"] = lap.player_id;
         item["map_id"] = lap.map_id;
         item["time"] = lap.time;
         if (!lap.ghostData.empty()) {
@@ -192,5 +204,7 @@ void NetworkManager::saveOfflineQueue() {
     std::ofstream file(OFFLINE_QUEUE_FILE);
     if (file.is_open()) {
         file << j.dump(4);
+    } else {
+        std::cerr << "[NETWORK] Failed to open offline queue file for writing: " << OFFLINE_QUEUE_FILE << std::endl;
     }
 }

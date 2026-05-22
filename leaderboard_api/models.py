@@ -7,6 +7,7 @@ class LapTime(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     player = Column(String, index=True)
+    player_id = Column(String, index=True, nullable=True) # Unique ID for the player
     map_id = Column(String, index=True)
     time = Column(Float, index=True)
     date = Column(DateTime, default=datetime.datetime.utcnow)

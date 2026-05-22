@@ -37,12 +37,12 @@ void GameObject::update() {
   posx -= SPEED * (cos(angle) * vel);
   posy -= SPEED * (sin(angle) * vel);
 
-  // Render relative to camera position
-  dstRect.x = posx - Game::camera.x;
-  dstRect.y = posy - Game::camera.y;
+  // Render relative to camera position (moved to render() to fix 1-frame lag)
 }
 
 void GameObject::render() {
+  dstRect.x = posx - Game::camera.x;
+  dstRect.y = posy - Game::camera.y;
   SDL_RenderTextureRotated(Game::renderer, objTexture, &srcRect, &dstRect,
                            (deg - 90), nullptr, SDL_FLIP_NONE);
 }

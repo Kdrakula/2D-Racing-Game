@@ -13,11 +13,11 @@
 - [x] zamykajac aplikacje zamykamy obecne okno i cofamy sie do menu zamiast zabic ja calkiem
 - [x] dane o duchu powinny zostac przeniesione z lokalnych na serwer i do bazy
 - [x] niech w tabeli wyswietla sie 10 najlepszych czasow
-- [ ] upewnic sie ze mapy roznych rozmiarow sa poprawnie obslugiwane
-- [ ] poprawic warunki brzegowe, nie ma potrezby sprawdzac 4 na raz
-- [ ] bląd logiczny, kolizja dziala poprawnie, ale wizulanie obwodka zalega za pedzacym samochodem 
-- [ ] dodac licznik fps
-- [ ] unique nicks
+- [x] upewnic sie ze mapy roznych rozmiarow sa poprawnie obslugiwane
+- [x] poprawic warunki brzegowe, nie ma potrezby sprawdzac 4 na raz
+- [x] bląd logiczny, kolizja dziala poprawnie, ale wizulanie obwodka zalega za pedzacym samochodem 
+- [x] dodac licznik fps
+- [x] unique nicks
 - [x] names above ghost and players (toggable)
 
 ### 🟢 3. Gameplay i Fizyka (Średni priorytet)
@@ -27,3 +27,4 @@
 
 ### 🔵 4. Aspekty Wizualne (Niski priorytet)
 - [ ] particles & slady opon
+- [ ] nowe mapy i pojazdy

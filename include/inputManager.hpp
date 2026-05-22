@@ -20,10 +20,12 @@ public:
   bool showResults = false;
 
   bool showMask = false;
-  bool showNames = true; // default to true since it's a cool feature
+  bool showNames = true;
+  bool showFps = false;
 
   bool isTypingName = false;
   std::string playerName = "Player";
+  std::string clientId = "";
 
   bool refreshLeaderboard = false;
 

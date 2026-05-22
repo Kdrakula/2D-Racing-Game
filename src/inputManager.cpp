@@ -1,6 +1,30 @@
 #include "inputManager.hpp"
 #include <fstream>
 #include <SDL3/SDL.h>
+#include <random>
+#include <sstream>
+#include <iostream>
+
+static std::string generateUUID() {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<> dis(0, 15);
+    static std::uniform_int_distribution<> dis2(8, 11);
+
+    std::stringstream ss;
+    ss << std::hex;
+    for (int i = 0; i < 8; i++) ss << dis(gen);
+    ss << "-";
+    for (int i = 0; i < 4; i++) ss << dis(gen);
+    ss << "-4";
+    for (int i = 0; i < 3; i++) ss << dis(gen);
+    ss << "-";
+    ss << dis2(gen);
+    for (int i = 0; i < 3; i++) ss << dis(gen);
+    ss << "-";
+    for (int i = 0; i < 12; i++) ss << dis(gen);
+    return ss.str();
+}
 
 InputManager::InputManager() {
     std::string path = std::string(SDL_GetBasePath()) + "assets/player_name.txt";
@@ -8,6 +32,20 @@ InputManager::InputManager() {
     if (in.is_open()) {
         std::getline(in, playerName);
         in.close();
+    }
+
+    std::string uuidPath = std::string(SDL_GetBasePath()) + "assets/client_id.txt";
+    std::ifstream uuidIn(uuidPath);
+    if (uuidIn.is_open()) {
+        std::getline(uuidIn, clientId);
+        uuidIn.close();
+    } else {
+        clientId = generateUUID();
+        std::ofstream uuidOut(uuidPath);
+        if (uuidOut.is_open()) {
+            uuidOut << clientId;
+            uuidOut.close();
+        }
     }
 }
 
@@ -57,6 +95,9 @@ void InputManager::update() {
           break;
         case SDLK_V:
           showNames = !showNames;
+          break;
+        case SDLK_F:
+          showFps = !showFps;
           break;
         case SDLK_L:
           isDebugToggled = true;

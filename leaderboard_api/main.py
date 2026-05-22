@@ -17,12 +17,14 @@ from typing import Optional
 
 class LapTimeCreate(BaseModel):
     player: str
+    player_id: Optional[str] = None
     map_id: str
     time: float
     ghost: Optional[str] = None # Base64 encoded ghost data
 
 class LapTimeResponse(BaseModel):
     player: str
+    player_id: Optional[str] = None
     time: float
     date: str
     ghost: Optional[str] = None # Base64 encoded ghost data for world record
@@ -38,6 +40,7 @@ def receive_laptime(lap: LapTimeCreate, db: Session = Depends(get_db)):
 
     db_lap = models.LapTime(
         player=lap.player, 
+        player_id=lap.player_id,
         map_id=lap.map_id,
         time=lap.time, 
         date=datetime.datetime.now(),
@@ -58,9 +61,11 @@ def get_laptimes(map_id: str = None, db: Session = Depends(get_db)):
     records = query.order_by(models.LapTime.time.asc()).limit(10).all()
     
     response = []
+    
     for i, r in enumerate(records):
         item = {
             "player": r.player, 
+            "player_id": r.player_id,
             "time": r.time, 
             "date": r.date.strftime("%Y-%m-%d %H:%M:%S"),
             "ghost": None
@@ -70,5 +75,5 @@ def get_laptimes(map_id: str = None, db: Session = Depends(get_db)):
             item["ghost"] = base64.b64encode(r.ghost_data).decode('utf-8')
             
         response.append(item)
-    
+            
     return response

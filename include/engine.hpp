@@ -8,7 +8,6 @@
 #include "lapTimer.hpp"
 #include "ghostManager.hpp"
 #include "overlay.hpp"
-#include "nicknameOverlay.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 #include <SDL3_ttf/SDL_ttf.h>
@@ -62,6 +61,11 @@ private:
   bool updateAvailable = false;
   std::string updateDownloadUrl;
   void checkForUpdates();
+
+  // --- FPS Tracking ---
+  int fps = 0;
+  int frameCount = 0;
+  Uint64 lastFpsTime = 0;
 };
 
 #endif

@@ -9,6 +9,7 @@
 
 struct OfflineLap {
     std::string player;
+    std::string player_id;
     std::string map_id;
     float time;
     std::vector<uint8_t> ghostData;
@@ -32,7 +33,7 @@ public:
     bool isOnline();
     std::string getStatusString();
 
-    void queueOfflineLap(const std::string& player, const std::string& map_id, float time, const std::vector<uint8_t>& ghostData);
+    void queueOfflineLap(const std::string& player, const std::string& player_id, const std::string& map_id, float time, const std::vector<uint8_t>& ghostData);
     void syncOfflineQueue();
 
 private:

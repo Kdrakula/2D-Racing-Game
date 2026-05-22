@@ -81,11 +81,11 @@ void LapTimer::fetchLeaderboard(const std::string &trackName) {
   }).detach();
 }
 
-void LapTimer::sendLapTime(const std::string &playerName, float time,
+void LapTimer::sendLapTime(const std::string &playerName, const std::string &clientId, float time,
                          const std::string &trackName, std::vector<uint8_t> ghostData) {
-  std::thread([this, playerName, time, trackName, ghostData]() {
+  std::thread([this, playerName, clientId, time, trackName, ghostData]() {
     if (!NetworkManager::getInstance().isOnline()) {
-        NetworkManager::getInstance().queueOfflineLap(playerName, trackName, time, ghostData);
+        NetworkManager::getInstance().queueOfflineLap(playerName, clientId, trackName, time, ghostData);
         return;
     }
 
@@ -94,6 +94,7 @@ void LapTimer::sendLapTime(const std::string &playerName, float time,
 
     nlohmann::json j;
     j["player"] = playerName;
+    j["player_id"] = clientId;
     j["map_id"] = trackName;
     j["time"] = time;
 
@@ -110,12 +111,12 @@ void LapTimer::sendLapTime(const std::string &playerName, float time,
         this->fetchLeaderboard(trackName); // Refresh after upload
       } else {
         std::cerr << "\n[NETWORK] Server returned error status: " << res->status << std::endl;
-        NetworkManager::getInstance().queueOfflineLap(playerName, trackName, time, ghostData);
+        NetworkManager::getInstance().queueOfflineLap(playerName, clientId, trackName, time, ghostData);
       }
     } else {
       std::cerr << "\n[NETWORK] Failed to send lap time to server. Error: "
                 << httplib::to_string(res.error()) << std::endl;
-      NetworkManager::getInstance().queueOfflineLap(playerName, trackName, time, ghostData);
+      NetworkManager::getInstance().queueOfflineLap(playerName, clientId, trackName, time, ghostData);
     }
   }).detach();
 }
@@ -125,7 +126,7 @@ Uint32 LapTimer::getCurrentLapTimeMs() const {
     return SDL_GetTicks() - startTime;
 }
 
-int LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track, const std::string &playerName) {
+int LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track, const std::string &playerName, const std::string &clientId) {
   int status = 0; // running
 
   // Initialize track checkpoints if needed (or just use them from track)
@@ -201,7 +202,7 @@ int LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track, const s
         ghostPayload = gm_->getSerializedBestLap();
     }
     
-    sendLapTime(playerName, lastLapTime, track.name, ghostPayload);
+    sendLapTime(playerName, clientId, lastLapTime, track.name, ghostPayload);
   }
 
   return status;

@@ -195,16 +195,15 @@ void Game::update() {
   if (player->posx < 0.0f) {
     player->posx = 0.0f;
     hitBoundary = true;
-  }
-  if (player->posy < 0.0f) {
-    player->posy = 0.0f;
-    hitBoundary = true;
-  }
-  if (player->posx + player->width > mapWidth) {
+  } else if (player->posx + player->width > mapWidth) {
     player->posx = mapWidth - player->width;
     hitBoundary = true;
   }
-  if (player->posy + player->height > mapHeight) {
+
+  if (player->posy < 0.0f) {
+    player->posy = 0.0f;
+    hitBoundary = true;
+  } else if (player->posy + player->height > mapHeight) {
     player->posy = mapHeight - player->height;
     hitBoundary = true;
   }
@@ -241,7 +240,7 @@ void Game::update() {
 
   // --- 6. Lap Timing Logic ---
   playerBox_ = {player->posx, player->posy, player->width, player->height};
-  int lapStatus = lapTimer.update(playerBox_, track_, input.playerName);
+  int lapStatus = lapTimer.update(playerBox_, track_, input.playerName, input.clientId);
 
   if (lapStatus == 1) { // Lap started / restarted
       ghostManager.startRecording();
@@ -363,6 +362,30 @@ void Game::render() {
 
   // Reset the renderer color back to black for the next frame
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+
+  // --- FPS Calculation & Rendering ---
+  frameCount++;
+  Uint64 currentTime = SDL_GetTicks();
+  if (currentTime - lastFpsTime >= 1000) {
+      fps = frameCount;
+      frameCount = 0;
+      lastFpsTime = currentTime;
+  }
+
+  if (input.showFps && Game::font) {
+      std::string fpsText = "FPS: " + std::to_string(fps);
+      SDL_Color fpsColor = {0, 255, 0, 255};
+      SDL_Surface* surf = TTF_RenderText_Blended(Game::font, fpsText.c_str(), 0, fpsColor);
+      if (surf) {
+          SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+          if (tex) {
+              SDL_FRect dst = { WINDOW_WIDTH - surf->w - 10.0f, 10.0f, (float)surf->w, (float)surf->h };
+              SDL_RenderTexture(renderer, tex, nullptr, &dst);
+              SDL_DestroyTexture(tex);
+          }
+          SDL_DestroySurface(surf);
+      }
+  }
 
   SDL_RenderPresent(renderer);
 }

@@ -17,7 +17,7 @@ public:
   // Pass the player's bounding box and track info
   // update the lap state based on player position.
   // Returns: 0 = running, 1 = started/restarted lap, 2 = finished lap, 3 = finished (new best)
-  int update(const SDL_FRect &playerBox, const TrackInfo &track, const std::string &playerName);
+  int update(const SDL_FRect &playerBox, const TrackInfo &track, const std::string &playerName, const std::string &clientId);
 
   bool isStarted() const { return isLapStarted; }
   Uint32 getCurrentLapTimeMs() const;
@@ -59,7 +59,7 @@ private:
   // AABB intersection check
   bool checkAABB(const SDL_FRect &a, const SDL_FRect &b) const;
 
-  void sendLapTime(const std::string &playerName, float time,
+  void sendLapTime(const std::string &playerName, const std::string &clientId, float time,
                    const std::string &trackName, std::vector<uint8_t> ghostData);
 
   GhostManager* gm_ = nullptr;
