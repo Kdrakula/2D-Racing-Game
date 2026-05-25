@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 4.1)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
 # Define project name and language (C++)
 project(MyRacingGame VERSION 1.0 LANGUAGES CXX)
@@ -29,6 +30,13 @@ FetchContent_Declare(
         GIT_SHALLOW    TRUE
 )
 FetchContent_MakeAvailable(nlohmann_json)
+
+FetchContent_Declare(
+        doctest
+        GIT_REPOSITORY https://github.com/doctest/doctest.git
+        GIT_TAG        v2.4.11
+)
+FetchContent_MakeAvailable(doctest)
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Include header files directory
@@ -96,3 +104,17 @@ if(APPLE)
         INSTALL_RPATH "@executable_path/../Frameworks"
     )
 endif()
+
+# ── Unit Testing Target ───────────────────────────────────────────────────────
+enable_testing()
+
+add_executable(run_tests 
+    tests/test_main.cpp
+    tests/test_utils.cpp
+    tests/test_ghost.cpp
+    src/utils.cpp
+    src/ghostManager.cpp
+)
+
+target_link_libraries(run_tests PRIVATE doctest::doctest SDL3::SDL3)
+add_test(NAME run_tests COMMAND run_tests)

@@ -1,6 +1,6 @@
 # Wrapper Makefile to automate CMake build and execution
 
-.PHONY: build run clean
+.PHONY: build run clean test
 
 # Default target: Creates build dir, runs CMake, and compiles
 build:
@@ -19,3 +19,9 @@ run: build
 clean:
 	rm -rf build
 	@echo "Build directory removed."
+
+# Build and run the doctest unit tests
+test:
+	@mkdir -p build
+	@cd build && cmake .. && make run_tests
+	@./build/run_tests

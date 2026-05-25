@@ -1,5 +1,6 @@
 #include "engine.hpp"
 #include "menu.hpp"
+#include "networkManager.hpp"
 #include <SDL3/SDL.h>
 #include <filesystem>
 #include <iostream>
@@ -53,5 +54,8 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
+
+  // Stop network polling thread cleanly before static global destruction order fiasco
+  NetworkManager::getInstance().stopPolling();
   return 0;
 }

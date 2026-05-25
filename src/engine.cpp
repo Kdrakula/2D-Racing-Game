@@ -407,6 +407,5 @@ void Game::clean() {
   SDL_DestroyWindow(window);
   TTF_Quit();
   SDL_Quit();
-  NetworkManager::getInstance().stopPolling();
   std::cout << "Engine cleaned successfully." << std::endl;
 }
