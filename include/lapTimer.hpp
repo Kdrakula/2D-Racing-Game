@@ -62,6 +62,8 @@ private:
   void sendLapTime(const std::string &playerName, const std::string &clientId, float time,
                    const std::string &trackName, std::vector<uint8_t> ghostData);
 
+  void loadLocalBest(const std::string &trackName);
+
   GhostManager* gm_ = nullptr;
 };
 

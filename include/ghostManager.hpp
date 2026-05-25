@@ -42,6 +42,10 @@ public:
     std::vector<uint8_t> getSerializedBestLap() const;
     void loadFromBuffer(const std::vector<uint8_t>& buffer);
     bool hasBestLap() const { return !bestLapFrames_.empty(); }
+    float getBestLapTime() const {
+        if (bestLapFrames_.empty()) return 0.0f;
+        return bestLapFrames_.back().lapTimeMs / 1000.0f;
+    }
 
     void setGhostPlayerName(const std::string& name) { ghostPlayerName_ = name; }
     std::string getGhostPlayerName() const { return ghostPlayerName_; }

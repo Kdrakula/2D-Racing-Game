@@ -10,6 +10,7 @@
 #include <nlohmann/json.hpp> // For JSON serialization
 #include <vector>
 #include <cstdlib>
+#include <algorithm>
 
 #include "networkManager.hpp"
 #include "utils.hpp"
@@ -33,6 +34,36 @@ void LapTimer::fetchLeaderboard(const std::string &trackName) {
     if (!NetworkManager::getInstance().isOnline()) {
         std::lock_guard<std::mutex> lock(recordsMutex);
         topRecords.clear();
+
+        // 1. Add local best lap if available
+        if (gm_ && gm_->hasBestLap()) {
+            LapRecord localRecord;
+            localRecord.player = gm_->getGhostPlayerName();
+            if (localRecord.player == "Local Ghost" || localRecord.player == "Unknown") {
+                localRecord.player = "Local Best";
+            }
+            localRecord.time = gm_->getBestLapTime();
+            localRecord.date = "Local Disk";
+            topRecords.push_back(localRecord);
+        }
+
+        // 2. Add queued offline times for this track
+        auto offlineLaps = NetworkManager::getInstance().getOfflineQueue();
+        for (const auto& lap : offlineLaps) {
+            if (lap.map_id == trackName) {
+                LapRecord rec;
+                rec.player = lap.player + " [Offline]";
+                rec.time = lap.time;
+                rec.date = "Pending Sync";
+                topRecords.push_back(rec);
+            }
+        }
+
+        // Sort records ascending (fastest first)
+        std::sort(topRecords.begin(), topRecords.end(), [](const LapRecord &a, const LapRecord &b) {
+            return a.time < b.time;
+        });
+
         return;
     }
 
@@ -126,6 +157,24 @@ Uint32 LapTimer::getCurrentLapTimeMs() const {
     return SDL_GetTicks() - startTime;
 }
 
+void LapTimer::loadLocalBest(const std::string &trackName) {
+  if (gm_) {
+    float ghostBest = gm_->getBestLapTime();
+    if (ghostBest > 0.0f) {
+      bestLapTime = ghostBest;
+      bestLapSet = true;
+      std::cout << "[LAP] Loaded local best lap time from ghost for track " << trackName << ": " << bestLapTime << "s" << std::endl;
+    } else {
+      bestLapTime = 0.0f;
+      bestLapSet = false;
+      std::cout << "[LAP] No local best lap time found for track " << trackName << std::endl;
+    }
+  } else {
+    bestLapTime = 0.0f;
+    bestLapSet = false;
+  }
+}
+
 int LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track, const std::string &playerName, const std::string &clientId) {
   int status = 0; // running
 
@@ -137,6 +186,7 @@ int LapTimer::update(const SDL_FRect &playerBox, const TrackInfo &track, const s
     hitCheckpoints.assign(checkpoints.size(), false);
     isLapStarted = false; // Reset lap state for new track
     fetchLeaderboard(track.name);
+    loadLocalBest(track.name);
   }
 
   Uint64 currentTime = SDL_GetTicks();

@@ -35,6 +35,7 @@ public:
 
     void queueOfflineLap(const std::string& player, const std::string& player_id, const std::string& map_id, float time, const std::vector<uint8_t>& ghostData);
     void syncOfflineQueue();
+    std::vector<OfflineLap> getOfflineQueue();
 
 private:
     NetworkManager();

@@ -208,3 +208,8 @@ void NetworkManager::saveOfflineQueue() {
         std::cerr << "[NETWORK] Failed to open offline queue file for writing: " << OFFLINE_QUEUE_FILE << std::endl;
     }
 }
+
+std::vector<OfflineLap> NetworkManager::getOfflineQueue() {
+    std::lock_guard<std::mutex> lock(mtx_);
+    return offlineQueue_;
+}
